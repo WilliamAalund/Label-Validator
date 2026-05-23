@@ -1,0 +1,31 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: packages/web/Dockerfile
+    ports:
+      - "${WEB_PORT:-5173}:${WEB_PORT:-5173}"
+    environment:
+      PORT: ${WEB_PORT:-5173}
+    volumes:
+      - ./packages/web:/monorepo/packages/web
+      - ./packages/shared:/monorepo/packages/shared
+      - /monorepo/packages/web/node_modules
+      - pnpm_store:/monorepo/node_modules
+
+  api:
+    build:
+      context: .
+      dockerfile: packages/api/Dockerfile
+    ports:
+      - "${API_PORT:-3010}:3010"
+    env_file:
+      - ./.env
+    volumes:
+      - ./packages/api:/monorepo/packages/api
+      - ./packages/shared:/monorepo/packages/shared
+      - /monorepo/packages/api/node_modules
+      - pnpm_store:/monorepo/node_modules
+
+volumes:
+  pnpm_store:

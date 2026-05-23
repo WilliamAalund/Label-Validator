@@ -1,0 +1,52 @@
+projects:
+  - name: label-validator
+    environments:
+      - name: Production
+        services:
+          - type: web
+            name: web
+            repo: https://github.com/WilliamAalund/Label-Validator.git
+            branch: main
+            runtime: static
+            buildCommand: pnpm install --frozen-lockfile && pnpm --filter web build
+            staticPublishPath: ./packages/web/dist
+            autoDeployTrigger: checksPass
+            buildFilter:
+              paths:
+                - packages/web/**
+                - packages/shared/**
+                - package.json
+                - pnpm-lock.yaml
+                - pnpm-workspace.yaml
+            routes:
+              - type: rewrite
+                source: /*
+                destination: /index.html
+            envVars:
+              - key: VITE_API_URL
+                fromService:
+                  name: api
+                  type: web
+                  envVarKey: RENDER_EXTERNAL_URL
+
+          - type: web
+            name: api
+            plan: free
+            repo: https://github.com/WilliamAalund/Label-Validator.git
+            branch: main
+            runtime: docker
+            dockerContext: .
+            dockerfilePath: ./packages/api/production.Dockerfile
+            healthCheckPath: /
+            autoDeployTrigger: checksPass
+            buildFilter:
+              paths:
+                - packages/api/**
+                - packages/shared/**
+                - package.json
+                - pnpm-lock.yaml
+                - pnpm-workspace.yaml
+            envVars:
+              - key: ANTHROPIC_API_KEY
+                sync: false
+            region: ohio
