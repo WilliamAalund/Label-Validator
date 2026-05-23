@@ -1,6 +1,8 @@
 # Label-Validator
-A small project that analyzes and determines compliance of TTB Labels with forms by leveraging AI.
 
+[![Tests](https://github.com/WilliamAalund/Label-Validator/actions/workflows/node.js.yml/badge.svg?branch=main)](https://github.com/WilliamAalund/Label-Validator/actions/workflows/node.js.yml)
+
+A small project that analyzes and determines compliance of TTB Labels with forms by leveraging AI.
 # Development Setup
 Follow these instructions to host the project locally:
 
