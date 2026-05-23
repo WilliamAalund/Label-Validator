@@ -11,7 +11,7 @@ const verifyLimiter = rateLimit({
 
 app.use(express.json());
 
-app.get('/', (req, res) => {
+app.get('/health', (req, res) => {
   res.status(200).json({ message: 'Health check successful' });
 });
 
