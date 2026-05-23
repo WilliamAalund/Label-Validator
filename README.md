@@ -8,14 +8,15 @@ Follow these instructions to host the project locally:
 
 - Clone this repository on your local machine.
 - Ensure [Docker Desktop](https://www.docker.com/products/docker-desktop/) is installed on your local machine.
-
-
-Run the command `docker compose up --build` in the root directory of the repository.
+- Create an .env file in the root of the repository and add a variable named `ANTHROPIC_API_KEY`. Set the variable's value to a valid Anthropic API key.
 
 > [!IMPORTANT]
 > Ensure that the ports used by this project's applications are ***NOT IN USE*** when using Docker Compose. (Ports specified in the compose.yaml file)
 
-(Optional) For local development outside Docker, install [pnpm](https://pnpm.io/installation) and run `pnpm install` from the repository root.
+Run the command `docker compose up --build` in the root directory of the repository.
+
+> [!NOTE]
+> **Optional:** For local development outside Docker, install [pnpm](https://pnpm.io/installation) and run `pnpm install` from the repository root.
 
 # Approach
 
