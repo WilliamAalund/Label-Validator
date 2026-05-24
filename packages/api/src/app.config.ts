@@ -11,6 +11,7 @@ import {
 
 const app = express();
 
+// CORS origins
 const corsOrigins = (process.env.CORS_ORIGIN ?? 'http://localhost:5173')
   .split(',')
   .map((origin) => origin.trim())
@@ -24,6 +25,7 @@ app.use(
   }),
 );
 
+// Rate limiting
 const verifyLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 15,
@@ -34,8 +36,10 @@ const verifyLimiter = rateLimit({
   },
 });
 
+// Parse JSON bodies
 app.use(express.json({ limit: '10mb' }));
 
+// Logging
 app.use((req, res, next) => {
   const start = Date.now();
   res.on('finish', () => {
@@ -44,10 +48,12 @@ app.use((req, res, next) => {
   next();
 });
 
+// Routes
 app.get('/health', (req, res) => {
   res.status(200).json({ message: 'Health check successful' });
 });
 
+// /labels
 const labelRouter = express.Router();
 
 labelRouter.post('/verify', verifyLimiter, async (req, res) => {
@@ -61,6 +67,7 @@ labelRouter.post('/verify', verifyLimiter, async (req, res) => {
   const outcome = await analyzeLabel(
     parsedImage.payload.image,
     parsedImage.payload.mediaType,
+    parsedImage.payload.requirements,
   );
 
   const response = analyzeOutcomeToResponse(outcome);

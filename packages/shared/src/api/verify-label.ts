@@ -5,6 +5,8 @@ export type SupportedMediaType = "image/jpeg" | "image/png";
 export type VerifyLabelImageRequest = {
   image: string;
   mediaType: SupportedMediaType;
+  /** Free-text validation requirements (max 280 characters). */
+  requirements: string;
 };
 
 export type VerifyLabelBatchRequest = {
