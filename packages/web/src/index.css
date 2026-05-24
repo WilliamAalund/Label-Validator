@@ -71,6 +71,19 @@ code {
   background: var(--code-bg);
 }
 
+.app-header {
+  background-color: #363ed1;
+  margin: 0;
+}
+
+.app-header h1 {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
 /* Home page — file upload */
 
 .home {
@@ -146,3 +159,4 @@ code {
   opacity: 0.5;
   cursor: not-allowed;
 }
+

@@ -1,8 +1,10 @@
-
+import "../index.css";
 
 const AppHeader = () => {
     return (
-        <div></div>
+        <div className="app-header">
+            <h1>TTB Label Validator</h1>
+        </div>
     );
 };
 
