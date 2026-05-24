@@ -16,7 +16,7 @@ Follow these instructions to host the project locally:
 Run the command `docker compose up --build` in the root directory of the repository.
 
 > [!NOTE]
-> **Optional:** For local development outside Docker, install [pnpm](https://pnpm.io/installation) and run `pnpm install` from the repository root.
+> **Optional:** For local development outside Docker, install [pnpm](https://pnpm.io/installation) and run `pnpm install` from the repository root, then manually add 
 
 # Approach
 

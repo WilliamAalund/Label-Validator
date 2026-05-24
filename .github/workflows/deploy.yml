@@ -1,0 +1,130 @@
+name: CD - Deploy to Render
+
+# Runs after API CI and Web CI both succeed on main (see verify-ci job).
+# Placeholder: wire Render deploy hooks via repository secrets when ready.
+
+on:
+  workflow_run:
+    workflows:
+      - API CI
+      - Web CI
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git commit SHA to deploy (defaults to main HEAD)
+        required: false
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: render-deploy-${{ github.event.workflow_run.head_sha || github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  verify-ci:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.event == 'push'
+      )
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+      sha: ${{ steps.check.outputs.sha }}
+    steps:
+      - uses: actions/github-script@v7
+        id: check
+        with:
+          script: |
+            const requiredWorkflows = ['API CI', 'Web CI'];
+            const sha =
+              context.payload.inputs?.ref ||
+              context.payload.workflow_run?.head_sha ||
+              context.sha;
+
+            core.setOutput('sha', sha);
+
+            if (context.eventName === 'workflow_dispatch') {
+              core.info(`Manual deploy requested for ${sha}`);
+              core.setOutput('ready', 'true');
+              return;
+            }
+
+            const { owner, repo } = context.repo;
+            const { data: workflowList } = await github.rest.actions.listRepoWorkflows({
+              owner,
+              repo,
+            });
+
+            for (const name of requiredWorkflows) {
+              const workflow = workflowList.workflows.find((w) => w.name === name);
+              if (!workflow) {
+                core.setFailed(`Workflow not found: ${name}`);
+                return;
+              }
+
+              const { data: runs } = await github.rest.actions.listWorkflowRuns({
+                owner,
+                repo,
+                workflow_id: workflow.id,
+                head_sha: sha,
+                per_page: 20,
+              });
+
+              const successRun = runs.workflow_runs.find(
+                (run) => run.status === 'completed' && run.conclusion === 'success',
+              );
+
+              if (!successRun) {
+                core.info(`${name} has not completed successfully on ${sha} yet`);
+                core.setOutput('ready', 'false');
+                return;
+              }
+            }
+
+            core.info(`Both API CI and Web CI succeeded on ${sha}`);
+            core.setOutput('ready', 'true');
+
+  deploy:
+    needs: verify-ci
+    if: needs.verify-ci.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Placeholder — trigger Render redeploy
+        env:
+          COMMIT_SHA: ${{ needs.verify-ci.outputs.sha }}
+          RENDER_WEB_DEPLOY_HOOK: ${{ secrets.RENDER_WEB_DEPLOY_HOOK }}
+          RENDER_API_DEPLOY_HOOK: ${{ secrets.RENDER_API_DEPLOY_HOOK }}
+        run: |
+          echo "CD placeholder: would redeploy Render services for commit ${COMMIT_SHA}"
+          echo ""
+          echo "Add GitHub secrets (Render Dashboard → each service → Settings → Deploy Hook):"
+          echo "  RENDER_WEB_DEPLOY_HOOK"
+          echo "  RENDER_API_DEPLOY_HOOK"
+          echo ""
+          echo "Then replace this step with:"
+          echo '  curl -fsS -X POST "${RENDER_WEB_DEPLOY_HOOK}&ref=${COMMIT_SHA}"'
+          echo '  curl -fsS -X POST "${RENDER_API_DEPLOY_HOOK}&ref=${COMMIT_SHA}"'
+
+          if [ -n "${RENDER_WEB_DEPLOY_HOOK}" ]; then
+            echo "Triggering web deploy..."
+            curl -fsS -X POST "${RENDER_WEB_DEPLOY_HOOK}&ref=${COMMIT_SHA}"
+          else
+            echo "Skipping web deploy (RENDER_WEB_DEPLOY_HOOK not set)"
+          fi
+
+          if [ -n "${RENDER_API_DEPLOY_HOOK}" ]; then
+            echo "Triggering api deploy..."
+            curl -fsS -X POST "${RENDER_API_DEPLOY_HOOK}&ref=${COMMIT_SHA}"
+          else
+            echo "Skipping api deploy (RENDER_API_DEPLOY_HOOK not set)"
+          fi

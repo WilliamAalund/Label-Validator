@@ -1,4 +1,4 @@
-name: Node.js CI
+name: API CI
 
 on:
   push:
@@ -6,13 +6,15 @@ on:
     paths:
       - "packages/shared/**"
       - "packages/api/**"
-      - ".github/workflows/node.js.yml"
+      - ".github/workflows/api.yml"
+      - "tsconfig.base.json"
   pull_request:
     branches: ["main"]
     paths:
       - "packages/shared/**"
       - "packages/api/**"
-      - ".github/workflows/node.js.yml"
+      - ".github/workflows/api.yml"
+      - "tsconfig.base.json"
 
 jobs:
   api-test:
