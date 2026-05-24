@@ -11,6 +11,7 @@ services:
       - ./packages/web:/monorepo/packages/web
       - ./packages/shared:/monorepo/packages/shared
       - /monorepo/packages/web/node_modules
+      - /monorepo/packages/shared/node_modules
       - pnpm_store:/monorepo/node_modules
 
   api:
@@ -25,6 +26,7 @@ services:
       - ./packages/api:/monorepo/packages/api
       - ./packages/shared:/monorepo/packages/shared
       - /monorepo/packages/api/node_modules
+      - /monorepo/packages/shared/node_modules
       - pnpm_store:/monorepo/node_modules
 
 volumes:

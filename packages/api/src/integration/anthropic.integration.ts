@@ -81,12 +81,12 @@ async function main(): Promise<void> {
   console.log("[analyzeLabel]");
   console.log(JSON.stringify(outcome.data, null, 2));
 
-  const response = await request(app).post("/verify-label").send(payload);
+  const response = await request(app).post("/labels/verify").send(payload);
   if (response.status !== 200) {
-    fail("POST /verify-label", { status: response.status, body: response.body });
+    fail("POST /labels/verify", { status: response.status, body: response.body });
   }
 
-  console.log("\n[POST /verify-label]");
+  console.log("\n[POST /labels/verify]");
   console.log(JSON.stringify(response.body.data, null, 2));
 }
 

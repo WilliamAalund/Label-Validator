@@ -11,10 +11,10 @@ describe("GET /health", () => {
   });
 });
 
-describe("POST /verify-label", () => {
+describe("POST /labels/verify", () => {
   it("returns 400 when image is missing", async () => {
     const response = await request(app)
-      .post("/verify-label")
+      .post("/labels/verify")
       .send({ mediaType: "image/jpeg" });
 
     expect(response.status).toBe(400);
@@ -23,7 +23,7 @@ describe("POST /verify-label", () => {
 
   it("returns 400 for unsupported media type", async () => {
     const response = await request(app)
-      .post("/verify-label")
+      .post("/labels/verify")
       .send({ image: Buffer.from("x").toString("base64"), mediaType: "image/webp" });
 
     expect(response.status).toBe(400);
@@ -32,7 +32,7 @@ describe("POST /verify-label", () => {
 
   it("returns 400 for invalid base64", async () => {
     const response = await request(app)
-      .post("/verify-label")
+      .post("/labels/verify")
       .send({ image: "!!!not-base64!!!", mediaType: "image/png" });
 
     expect(response.status).toBe(400);
@@ -40,7 +40,7 @@ describe("POST /verify-label", () => {
 
   it("returns 400 when image is empty", async () => {
     const response = await request(app)
-      .post("/verify-label")
+      .post("/labels/verify")
       .send({ image: "   ", mediaType: "image/png" });
 
     expect(response.status).toBe(400);

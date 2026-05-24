@@ -16,7 +16,9 @@ app.get('/health', (req, res) => {
   res.status(200).json({ message: 'Health check successful' });
 });
 
-app.post('/verify-label', verifyLimiter, async (req, res) => {
+const labelRouter = express.Router();
+
+labelRouter.post('/verify', verifyLimiter, async (req, res) => {
   const parsedImage = parseVerifyLabelImage(req.body);
   if (!parsedImage.ok) {
     res.status(400).json({ error: parsedImage.error });
@@ -59,9 +61,11 @@ app.post('/verify-label', verifyLimiter, async (req, res) => {
   }
 });
 
-app.post('/verify-label-batch', verifyLimiter, (req, res) => {
+labelRouter.post('/verify-batch', verifyLimiter, (req, res) => {
   const { labels } = req.body;
   res.status(200).json({ message: 'Label batch verified' });
 });
+
+app.use('/labels', labelRouter);
 
 export default app;
