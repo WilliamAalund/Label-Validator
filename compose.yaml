@@ -1,5 +1,5 @@
-# Dev: docker compose watch  (hot-reload via Compose Watch + tsx watch in the API image)
-# Or:  docker compose up --build
+# Dev: docker compose up --build -w  (Compose Watch syncs sources; use -w for hot reload)
+# Source bind mounts are intentionally omitted so watch can sync host edits into the containers.
 
 services:
   web:
@@ -10,13 +10,33 @@ services:
       - "${WEB_PORT:-5173}:${WEB_PORT:-5173}"
     environment:
       PORT: ${WEB_PORT:-5173}
-    volumes:
-      - ./tsconfig.base.json:/monorepo/tsconfig.base.json
-      - ./packages/web:/monorepo/packages/web
-      - ./packages/shared:/monorepo/packages/shared
-      - /monorepo/packages/web/node_modules
-      - /monorepo/packages/shared/node_modules
-      - pnpm_store:/monorepo/node_modules
+      # Bind-mount FS events are unreliable on Windows/macOS; polling backs up Compose Watch sync
+      CHOKIDAR_USEPOLLING: "true"
+    develop:
+      watch:
+        - action: sync
+          path: ./packages/web
+          target: /monorepo/packages/web
+          ignore:
+            - node_modules/
+        - action: sync
+          path: ./packages/shared
+          target: /monorepo/packages/shared
+          ignore:
+            - node_modules/
+        - action: sync
+          path: ./tsconfig.base.json
+          target: /monorepo/tsconfig.base.json
+        - action: rebuild
+          path: ./packages/web/package.json
+        - action: rebuild
+          path: ./packages/shared/package.json
+        - action: rebuild
+          path: ./package.json
+        - action: rebuild
+          path: ./pnpm-lock.yaml
+        - action: rebuild
+          path: ./pnpm-workspace.yaml
 
   api:
     build:
@@ -51,13 +71,6 @@ services:
           path: ./pnpm-lock.yaml
         - action: rebuild
           path: ./pnpm-workspace.yaml
-    volumes:
-      - ./tsconfig.base.json:/monorepo/tsconfig.base.json
-      - ./packages/api:/monorepo/packages/api
-      - ./packages/shared:/monorepo/packages/shared
-      - /monorepo/packages/api/node_modules
-      - /monorepo/packages/shared/node_modules
-      - pnpm_store:/monorepo/node_modules
-
-volumes:
-  pnpm_store:
+        - action: sync
+          path: ./tsconfig.base.json
+          target: /monorepo/tsconfig.base.json

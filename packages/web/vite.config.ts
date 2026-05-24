@@ -11,5 +11,9 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: Number(process.env.PORT) || 5173,
+    watch: {
+      // Required for HMR when sources are synced into the container (Compose Watch / Docker Desktop on Windows)
+      usePolling: true,
+    },
   },
 })
