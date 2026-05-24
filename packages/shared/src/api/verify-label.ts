@@ -11,6 +11,18 @@ export type VerifyLabelBatchRequest = {
   labels: VerifyLabelImageRequest[];
 };
 
+/** POST /labels/verify — 200 response body */
+export type VerifyLabelSuccessResponse = {
+  data: LabelExtraction;
+};
+
+/** POST /labels/verify — 400 / 422 / 502 / 503 response body */
+export type VerifyLabelErrorResponse = {
+  error: string;
+  issues?: SchemaValidationIssues;
+  rawText?: string;
+};
+
 /** Zod `error.format()` shape returned on schema_error responses. */
 export type SchemaValidationIssues = Record<string, unknown>;
 

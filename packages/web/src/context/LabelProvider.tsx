@@ -6,8 +6,13 @@ import {
     type ChangeEvent,
     type ReactNode,
 } from "react";
-import LabelContext, { MAX_LABEL_FILES, type LabelContextType } from "./LabelContext";
-
+import LabelContext, {
+    MAX_LABEL_FILES,
+    type LabelContextType,
+    type LabelValidationResult,
+} from "./LabelContext";
+import { validateImage } from "../routes/ValidateRoutes";
+import { fileToBase64, toSupportedMediaType } from "../utils/FileUtils";
 const isImageFile = (file: File) => file.type.startsWith("image/");
 
 async function extractDroppedImages(dataTransfer: DataTransfer): Promise<File[]> {
@@ -45,12 +50,15 @@ type LabelProviderProps = {
 
 const LabelProvider = ({ children }: LabelProviderProps) => {
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [error, setError] = useState<string | null>(null);
+    const [validationResults, setValidationResults] = useState<LabelValidationResult[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const skipClickAfterDropRef = useRef(false);
 
     const remainingSlots = MAX_LABEL_FILES - selectedFiles.length;
     const atMaxFiles = selectedFiles.length >= MAX_LABEL_FILES;
-    const canSubmit = selectedFiles.length > 0;
+    const canSubmit = selectedFiles.length > 0 && !isSubmitting;
 
     const addFiles = useCallback((incoming: File[]) => {
         const images = incoming.filter(isImageFile);
@@ -87,8 +95,47 @@ const LabelProvider = ({ children }: LabelProviderProps) => {
         [addFiles],
     );
 
-    const submitFiles = useCallback(() => {
-        console.log(selectedFiles);
+    const submitFiles = useCallback(async () => {
+        setError(null);
+        setIsSubmitting(true);
+
+        const filesToProcess = [...selectedFiles];
+
+        try {
+            for (const file of filesToProcess) {
+                let base64: string;
+                try {
+                    base64 = await fileToBase64(file);
+                } catch {
+                    setError(`Could not read "${file.name}".`);
+                    return;
+                }
+
+                const result = await validateImage({
+                    image: base64,
+                    mediaType: toSupportedMediaType(file),
+                });
+
+                if (!result.ok) {
+                    setError(`${file.name}: ${result.body.error}`);
+                    return;
+                }
+
+                const completed: LabelValidationResult = {
+                    id: crypto.randomUUID(),
+                    file,
+                    fileName: file.name,
+                    data: result.data,
+                };
+
+                setValidationResults((prev) => [...prev, completed]);
+                setSelectedFiles((prev) => prev.filter((f) => f !== file));
+            }
+        } catch {
+            setError("Unexpected error while validating labels.");
+        } finally {
+            setIsSubmitting(false);
+        }
     }, [selectedFiles]);
 
     const openFilePicker = useCallback(() => {
@@ -119,6 +166,10 @@ const LabelProvider = ({ children }: LabelProviderProps) => {
             atMaxFiles,
             canSubmit,
             addMorePrompt,
+            error,
+            setError,
+            validationResults,
+            isSubmitting,
             addFiles,
             removeFile,
             clearFiles,
@@ -134,6 +185,9 @@ const LabelProvider = ({ children }: LabelProviderProps) => {
             atMaxFiles,
             canSubmit,
             addMorePrompt,
+            error,
+            validationResults,
+            isSubmitting,
             addFiles,
             removeFile,
             clearFiles,

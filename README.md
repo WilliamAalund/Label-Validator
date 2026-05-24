@@ -8,7 +8,9 @@ Follow these instructions to host the project locally:
 
 - Clone this repository on your local machine.
 - Ensure [Docker Desktop](https://www.docker.com/products/docker-desktop/) is installed on your local machine.
-- Create an .env file in the root of the repository and add a variable named `ANTHROPIC_API_KEY`. Set the variable's value to a valid Anthropic API key.
+- Copy `.env.example` to `.env` in the repository root and set:
+  - `ANTHROPIC_API_KEY` — a valid Anthropic API key
+  - `VITE_API_URL` — API base URL for the web app (use `http://localhost:3010` for local Docker Compose)
 
 > [!IMPORTANT]
 > Ensure that the ports used by this project's applications are ***NOT IN USE*** when using Docker Compose. (Ports specified in the compose.yaml file)

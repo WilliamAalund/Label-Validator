@@ -24,6 +24,11 @@ projects:
             envVars:
               - key: ANTHROPIC_API_KEY
                 sync: false
+              - key: CORS_ORIGIN
+                fromService:
+                  name: web
+                  type: web
+                  envVarKey: WEB_URL
             region: ohio
 
           - type: web

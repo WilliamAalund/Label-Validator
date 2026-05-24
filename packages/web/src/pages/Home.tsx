@@ -1,5 +1,6 @@
 import { useContext, useState } from "react";
 import FileListItem from "../components/FileListItem";
+import ValidatedLabelCard from "../components/ValidatedLabelCard";
 import LabelContext from "../context/LabelContext";
 
 const Home = () => {
@@ -22,6 +23,9 @@ const Home = () => {
         submitFiles,
         openFilePicker,
         fileInputRef,
+        error,
+        validationResults,
+        isSubmitting,
     } = label;
 
     const onDragEnter = (event: React.DragEvent) => {
@@ -109,9 +113,31 @@ const Home = () => {
                 )
             )}
             <button type="button" onClick={submitFiles} disabled={!canSubmit}>
-                Upload {selectedFiles.length > 0 ? `${selectedFiles.length} ` : ""}
-                {selectedFiles.length === 1 ? "File" : "Files"}
+                {isSubmitting
+                    ? "Validating…"
+                    : `Upload ${selectedFiles.length > 0 ? `${selectedFiles.length} ` : ""}${
+                          selectedFiles.length === 1 ? "File" : "Files"
+                      }`}
             </button>
+
+            {isSubmitting && <p className="home-status">Analyzing label with the API…</p>}
+
+            {validationResults.length > 0 && (
+                <section className="home-validated" aria-live="polite">
+                    <h2>Validated labels</h2>
+                    <ul className="home-validated-list">
+                        {validationResults.map((result) => (
+                            <ValidatedLabelCard key={result.id} result={result} />
+                        ))}
+                    </ul>
+                </section>
+            )}
+
+            {error && (
+                <p className="home-error" role="alert">
+                    {error}
+                </p>
+            )}
         </div>
     );
 };

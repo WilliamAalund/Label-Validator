@@ -16,5 +16,7 @@ export {
   type VerifyLabelBatchItemResult,
   type VerifyLabelBatchRequest,
   type VerifyLabelBatchResponse,
+  type VerifyLabelErrorResponse,
   type VerifyLabelImageRequest,
+  type VerifyLabelSuccessResponse,
 } from "./api/verify-label.js";

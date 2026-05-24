@@ -8,8 +8,12 @@ services:
       dockerfile: packages/web/Dockerfile
     ports:
       - "${WEB_PORT:-5173}:${WEB_PORT:-5173}"
+    env_file:
+      - ./.env
     environment:
       PORT: ${WEB_PORT:-5173}
+      # Browser calls the API on the host-mapped port (not the Docker service name)
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3010}
       # Bind-mount FS events are unreliable on Windows/macOS; polling backs up Compose Watch sync
       CHOKIDAR_USEPOLLING: "true"
     develop:
@@ -47,6 +51,7 @@ services:
     env_file:
       - ./.env
     environment:
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
       # Helps tsx watch detect synced file changes on Windows/macOS Docker volumes
       CHOKIDAR_USEPOLLING: "true"
     develop:

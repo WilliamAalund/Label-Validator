@@ -1,3 +1,4 @@
+import cors from 'cors';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import {
@@ -10,13 +11,38 @@ import {
 
 const app = express();
 
+const corsOrigins = (process.env.CORS_ORIGIN ?? 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: corsOrigins,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type'],
+  }),
+);
+
 const verifyLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 15,
-  message: 'Too many requests, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    res.status(429).json({ error: 'Too many requests, please try again later.' });
+  },
 });
 
 app.use(express.json({ limit: '10mb' }));
+
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    console.log(`${req.method} ${req.originalUrl} ${res.statusCode} ${Date.now() - start}ms`);
+  });
+  next();
+});
 
 app.get('/health', (req, res) => {
   res.status(200).json({ message: 'Health check successful' });
@@ -25,6 +51,7 @@ app.get('/health', (req, res) => {
 const labelRouter = express.Router();
 
 labelRouter.post('/verify', verifyLimiter, async (req, res) => {
+  console.log('[labels/verify] analyzing label image');
   const parsedImage = parseVerifyLabelImage(req.body);
   if (!parsedImage.ok) {
     res.status(400).json({ error: parsedImage.error });
