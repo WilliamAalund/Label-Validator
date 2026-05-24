@@ -11,6 +11,7 @@ services:
     environment:
       PORT: ${WEB_PORT:-5173}
     volumes:
+      - ./tsconfig.base.json:/monorepo/tsconfig.base.json
       - ./packages/web:/monorepo/packages/web
       - ./packages/shared:/monorepo/packages/shared
       - /monorepo/packages/web/node_modules
@@ -51,6 +52,7 @@ services:
         - action: rebuild
           path: ./pnpm-workspace.yaml
     volumes:
+      - ./tsconfig.base.json:/monorepo/tsconfig.base.json
       - ./packages/api:/monorepo/packages/api
       - ./packages/shared:/monorepo/packages/shared
       - /monorepo/packages/api/node_modules
