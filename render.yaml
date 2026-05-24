@@ -3,6 +3,29 @@ projects:
     environments:
       - name: Production
         services:
+          # API first — static site references it via fromService.
+          - type: web
+            name: api
+            plan: free
+            repo: https://github.com/WilliamAalund/Label-Validator.git
+            branch: main
+            runtime: docker
+            dockerContext: .
+            dockerfilePath: ./packages/api/production.Dockerfile
+            healthCheckPath: /health
+            autoDeployTrigger: checksPass
+            buildFilter:
+              paths:
+                - packages/api/**
+                - packages/shared/**
+                - package.json
+                - pnpm-lock.yaml
+                - pnpm-workspace.yaml
+            envVars:
+              - key: ANTHROPIC_API_KEY
+                sync: false
+            region: ohio
+
           - type: web
             name: web
             repo: https://github.com/WilliamAalund/Label-Validator.git
@@ -28,25 +51,3 @@ projects:
                   name: api
                   type: web
                   envVarKey: RENDER_EXTERNAL_URL
-
-          - type: web
-            name: api
-            plan: free
-            repo: https://github.com/WilliamAalund/Label-Validator.git
-            branch: main
-            runtime: docker
-            dockerContext: .
-            dockerfilePath: ./packages/api/production.Dockerfile
-            healthCheckPath: /
-            autoDeployTrigger: checksPass
-            buildFilter:
-              paths:
-                - packages/api/**
-                - packages/shared/**
-                - package.json
-                - pnpm-lock.yaml
-                - pnpm-workspace.yaml
-            envVars:
-              - key: ANTHROPIC_API_KEY
-                sync: false
-            region: ohio
