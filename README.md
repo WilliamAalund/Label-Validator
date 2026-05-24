@@ -1,8 +1,6 @@
 # Label-Validator
 
-[![API](https://github.com/WilliamAalund/Label-Validator/actions/workflows/api.yml/badge.svg?branch=main)](https://github.com/WilliamAalund/Label-Validator/actions/workflows/api.yml)
-
-[![Website](https://github.com/WilliamAalund/Label-Validator/actions/workflows/web.yml/badge.svg?branch=main)](https://github.com/WilliamAalund/Label-Validator/actions/workflows/web.yml)
+[![API](https://github.com/WilliamAalund/Label-Validator/actions/workflows/api.yml/badge.svg?branch=main)](https://github.com/WilliamAalund/Label-Validator/actions/workflows/api.yml) [![Website](https://github.com/WilliamAalund/Label-Validator/actions/workflows/web.yml/badge.svg?branch=main)](https://github.com/WilliamAalund/Label-Validator/actions/workflows/web.yml)
 
 A small project that analyzes and determines compliance of TTB Labels with forms by leveraging AI.
 # Development Setup
