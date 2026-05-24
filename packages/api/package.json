@@ -4,8 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "apitest": "tsx src/tests/apitest.ts",
-    "test": "vitest run"
+    "apitest": "tsx src/integration/anthropic.cli.ts",
+    "test": "vitest run",
+    "test:integration": "tsx src/integration/anthropic.integration.ts"
   },
   "keywords": [],
   "author": "",

@@ -38,18 +38,12 @@ describe("POST /verify-label", () => {
     expect(response.status).toBe(400);
   });
 
-  it("accepts a data URL in the image field", async () => {
-    const pixel = Buffer.from(
-      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
-      "base64",
-    );
+  it("returns 400 when image is empty", async () => {
     const response = await request(app)
       .post("/verify-label")
-      .send({
-        image: `data:image/png;base64,${pixel.toString("base64")}`,
-        mediaType: "image/png",
-      });
+      .send({ image: "   ", mediaType: "image/png" });
 
-    expect(response.status).not.toBe(400);
+    expect(response.status).toBe(400);
+    expect(response.body.error).toMatch(/image/i);
   });
 });

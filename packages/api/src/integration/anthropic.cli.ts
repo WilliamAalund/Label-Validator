@@ -4,16 +4,17 @@ import dotenv from "dotenv";
 import * as fs from "fs";
 import * as path from "path";
 
-dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
+// Manual CLI: pnpm --filter api apitest -- <path/to/image.jpg|png>
 
-// Run with: pnpm --filter api apitest -- <path/to/image.jpg|png>
+const repoRoot = process.env.INIT_CWD ?? path.resolve(process.cwd(), "../..");
+dotenv.config({ path: path.join(repoRoot, ".env") });
 
 if (process.argv[2] === undefined) {
   console.error("Usage: pnpm --filter api apitest -- <image_path>");
   process.exit(1);
 }
 
-const imagePath = path.resolve(process.argv[2]);
+const imagePath = path.resolve(process.env.INIT_CWD ?? process.cwd(), process.argv[2]);
 const ext = path.extname(imagePath).toLowerCase();
 
 if (![".jpg", ".jpeg", ".png"].includes(ext)) {
