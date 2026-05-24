@@ -11,6 +11,12 @@ export type SupportedMediaType = (typeof SUPPORTED_MEDIA_TYPES)[number];
 /** Decoded image size limit (client should compress before upload). */
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
+/** Max images per POST /labels/verify-batch (Render free-tier demo limit). */
+export const MAX_BATCH_SIZE = 5;
+
+/** Concurrent Anthropic calls per batch request. */
+export const BATCH_CONCURRENCY = 2;
+
 export type VerifyLabelImagePayload = {
   image: string;
   mediaType: SupportedMediaType;
@@ -162,4 +168,175 @@ export async function analyzeLabel(
   }
 
   return { status: "success", data: parseResult.data };
+}
+
+export type SchemaValidationIssues = ReturnType<
+  Extract<LabelExtractionParseResult, { success: false }>["error"]["format"]
+>;
+
+export type VerifyLabelSuccessBody = { data: LabelExtraction };
+
+export type VerifyLabelErrorBody =
+  | { error: string }
+  | { error: string; rawText: string }
+  | { error: string; issues: SchemaValidationIssues; rawText: string };
+
+export function analyzeOutcomeToResponse(
+  outcome: AnalyzeLabelOutcome,
+):
+  | { httpStatus: 200; body: VerifyLabelSuccessBody }
+  | { httpStatus: 422 | 502 | 503; body: VerifyLabelErrorBody } {
+  switch (outcome.status) {
+    case "success":
+      return { httpStatus: 200, body: { data: outcome.data } };
+    case "missing_api_key":
+      return { httpStatus: 503, body: { error: "Label analysis is not configured." } };
+    case "no_text":
+      return { httpStatus: 502, body: { error: "Model returned no text response." } };
+    case "invalid_json":
+      return {
+        httpStatus: 502,
+        body: { error: "Model response was not valid JSON.", rawText: outcome.rawText },
+      };
+    case "schema_error":
+      return {
+        httpStatus: 422,
+        body: {
+          error: "Model response did not match label extraction schema.",
+          issues: outcome.issues,
+          rawText: outcome.rawText,
+        },
+      };
+    case "upstream_error":
+      return { httpStatus: 502, body: { error: outcome.message } };
+    default: {
+      const _exhaustive: never = outcome;
+      return { httpStatus: 502, body: { error: "Unexpected analysis error." } };
+    }
+  }
+}
+
+export type VerifyLabelBatchItemResult =
+  | { index: number; status: "success"; data: LabelExtraction }
+  | { index: number; status: "invalid_image"; error: string }
+  | { index: number; status: "schema_error"; error: string; issues: SchemaValidationIssues; rawText: string }
+  | { index: number; status: "invalid_json"; error: string; rawText: string }
+  | { index: number; status: "no_text"; error: string }
+  | { index: number; status: "upstream_error"; error: string }
+  | { index: number; status: "missing_api_key"; error: string };
+
+export function parseVerifyLabelBatch(
+  body: unknown,
+):
+  | { ok: true; items: VerifyLabelImagePayload[] }
+  | { ok: false; error: string } {
+  if (body === null || typeof body !== "object") {
+    return { ok: false, error: "Request body must be a JSON object." };
+  }
+
+  const { labels } = body as Record<string, unknown>;
+
+  if (!Array.isArray(labels)) {
+    return { ok: false, error: "Field `labels` must be an array." };
+  }
+
+  if (labels.length === 0) {
+    return { ok: false, error: "Field `labels` must contain at least one image." };
+  }
+
+  if (labels.length > MAX_BATCH_SIZE) {
+    return {
+      ok: false,
+      error: `Field \`labels\` must contain at most ${MAX_BATCH_SIZE} images.`,
+    };
+  }
+
+  const items: VerifyLabelImagePayload[] = [];
+  for (let index = 0; index < labels.length; index++) {
+    const parsed = parseVerifyLabelImage(labels[index]);
+    if (!parsed.ok) {
+      return {
+        ok: false,
+        error: `labels[${index}]: ${parsed.error}`,
+      };
+    }
+    items.push(parsed.payload);
+  }
+
+  return { ok: true, items };
+}
+
+function analyzeOutcomeToBatchItem(
+  index: number,
+  outcome: AnalyzeLabelOutcome,
+): VerifyLabelBatchItemResult {
+  switch (outcome.status) {
+    case "success":
+      return { index, status: "success", data: outcome.data };
+    case "missing_api_key":
+      return { index, status: "missing_api_key", error: "Label analysis is not configured." };
+    case "no_text":
+      return { index, status: "no_text", error: "Model returned no text response." };
+    case "invalid_json":
+      return {
+        index,
+        status: "invalid_json",
+        error: "Model response was not valid JSON.",
+        rawText: outcome.rawText,
+      };
+    case "schema_error":
+      return {
+        index,
+        status: "schema_error",
+        error: "Model response did not match label extraction schema.",
+        issues: outcome.issues,
+        rawText: outcome.rawText,
+      };
+    case "upstream_error":
+      return { index, status: "upstream_error", error: outcome.message };
+    default: {
+      const _exhaustive: never = outcome;
+      return { index, status: "upstream_error", error: "Unexpected analysis error." };
+    }
+  }
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  if (items.length === 0) {
+    return [];
+  }
+
+  const results: R[] = new Array(items.length);
+  let nextIndex = 0;
+
+  const worker = async (): Promise<void> => {
+    while (true) {
+      const index = nextIndex;
+      nextIndex += 1;
+      if (index >= items.length) {
+        return;
+      }
+      results[index] = await mapper(items[index]!, index);
+    }
+  };
+
+  const workers = Array.from(
+    { length: Math.min(concurrency, items.length) },
+    () => worker(),
+  );
+  await Promise.all(workers);
+  return results;
+}
+
+export async function verifyLabelBatch(
+  items: VerifyLabelImagePayload[],
+): Promise<VerifyLabelBatchItemResult[]> {
+  return mapWithConcurrency(items, BATCH_CONCURRENCY, async (item, index) => {
+    const outcome = await analyzeLabel(item.image, item.mediaType);
+    return analyzeOutcomeToBatchItem(index, outcome);
+  });
 }

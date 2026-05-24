@@ -1,3 +1,6 @@
+# Dev: docker compose watch  (hot-reload via Compose Watch + tsx watch in the API image)
+# Or:  docker compose up --build
+
 services:
   web:
     build:
@@ -22,6 +25,31 @@ services:
       - "${API_PORT:-3010}:3010"
     env_file:
       - ./.env
+    environment:
+      # Helps tsx watch detect synced file changes on Windows/macOS Docker volumes
+      CHOKIDAR_USEPOLLING: "true"
+    develop:
+      watch:
+        - action: sync
+          path: ./packages/api
+          target: /monorepo/packages/api
+          ignore:
+            - node_modules/
+        - action: sync
+          path: ./packages/shared
+          target: /monorepo/packages/shared
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: ./packages/api/package.json
+        - action: rebuild
+          path: ./packages/shared/package.json
+        - action: rebuild
+          path: ./package.json
+        - action: rebuild
+          path: ./pnpm-lock.yaml
+        - action: rebuild
+          path: ./pnpm-workspace.yaml
     volumes:
       - ./packages/api:/monorepo/packages/api
       - ./packages/shared:/monorepo/packages/shared

@@ -9,3 +9,12 @@ export {
   type LabelExtraction,
   type LabelExtractionParseResult,
 } from "./schemas/label/index.js";
+
+export {
+  type SchemaValidationIssues,
+  type SupportedMediaType,
+  type VerifyLabelBatchItemResult,
+  type VerifyLabelBatchRequest,
+  type VerifyLabelBatchResponse,
+  type VerifyLabelImageRequest,
+} from "./api/verify-label.js";

@@ -1,6 +1,12 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import { analyzeLabel, parseVerifyLabelImage } from './util/funcs.js';
+import {
+  analyzeLabel,
+  analyzeOutcomeToResponse,
+  parseVerifyLabelBatch,
+  parseVerifyLabelImage,
+  verifyLabelBatch,
+} from './util/funcs.js';
 
 const app = express();
 
@@ -30,40 +36,24 @@ labelRouter.post('/verify', verifyLimiter, async (req, res) => {
     parsedImage.payload.mediaType,
   );
 
-  switch (outcome.status) {
-    case 'success':
-      res.status(200).json({ data: outcome.data });
-      return;
-    case 'missing_api_key':
-      res.status(503).json({ error: 'Label analysis is not configured.' });
-      return;
-    case 'no_text':
-      res.status(502).json({ error: 'Model returned no text response.' });
-      return;
-    case 'invalid_json':
-      res.status(502).json({ error: 'Model response was not valid JSON.', rawText: outcome.rawText });
-      return;
-    case 'schema_error':
-      res.status(422).json({
-        error: 'Model response did not match label extraction schema.',
-        issues: outcome.issues,
-        rawText: outcome.rawText,
-      });
-      return;
-    case 'upstream_error':
-      res.status(502).json({ error: outcome.message });
-      return;
-    default: {
-      const _exhaustive: never = outcome;
-      res.status(500).json({ error: 'Unexpected analysis error.' });
-      return _exhaustive;
-    }
-  }
+  const response = analyzeOutcomeToResponse(outcome);
+  res.status(response.httpStatus).json(response.body);
 });
 
-labelRouter.post('/verify-batch', verifyLimiter, (req, res) => {
-  const { labels } = req.body;
-  res.status(200).json({ message: 'Label batch verified' });
+labelRouter.post('/verify-batch', verifyLimiter, async (req, res) => {
+  const parsedBatch = parseVerifyLabelBatch(req.body);
+  if (!parsedBatch.ok) {
+    res.status(400).json({ error: parsedBatch.error });
+    return;
+  }
+
+  if (!process.env.ANTHROPIC_API_KEY) {
+    res.status(503).json({ error: 'Label analysis is not configured.' });
+    return;
+  }
+
+  const results = await verifyLabelBatch(parsedBatch.items);
+  res.status(200).json({ results });
 });
 
 app.use('/labels', labelRouter);

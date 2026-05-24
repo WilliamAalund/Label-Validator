@@ -47,3 +47,59 @@ describe("POST /labels/verify", () => {
     expect(response.body.error).toMatch(/image/i);
   });
 });
+
+describe("POST /labels/verify-batch", () => {
+  const validItem = {
+    image: Buffer.from("x").toString("base64"),
+    mediaType: "image/jpeg" as const,
+  };
+
+  it("returns 400 when labels is missing", async () => {
+    const response = await request(app).post("/labels/verify-batch").send({});
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toMatch(/labels/i);
+  });
+
+  it("returns 400 when labels is empty", async () => {
+    const response = await request(app).post("/labels/verify-batch").send({ labels: [] });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toMatch(/at least one/i);
+  });
+
+  it("returns 400 when more than 5 labels", async () => {
+    const response = await request(app)
+      .post("/labels/verify-batch")
+      .send({ labels: Array.from({ length: 6 }, () => validItem) });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toMatch(/at most 5/i);
+  });
+
+  it("returns 400 when a batch item is invalid", async () => {
+    const response = await request(app)
+      .post("/labels/verify-batch")
+      .send({
+        labels: [validItem, { image: "not-valid!!!", mediaType: "image/png" }],
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toMatch(/labels\[1\]/i);
+  });
+
+  it("returns 503 when ANTHROPIC_API_KEY is not set", async () => {
+    const previous = process.env.ANTHROPIC_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
+
+    const response = await request(app)
+      .post("/labels/verify-batch")
+      .send({ labels: [validItem] });
+
+    if (previous !== undefined) {
+      process.env.ANTHROPIC_API_KEY = previous;
+    }
+
+    expect(response.status).toBe(503);
+  });
+});

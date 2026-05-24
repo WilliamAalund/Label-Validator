@@ -13,7 +13,7 @@ Follow these instructions to host the project locally:
 > [!IMPORTANT]
 > Ensure that the ports used by this project's applications are ***NOT IN USE*** when using Docker Compose. (Ports specified in the compose.yaml file)
 
-Run the command `docker compose up --build` in the root directory of the repository.
+Run the command `docker compose up --build -w` in the root directory of the repository. This will spin up local instances of both the backend API, and web application. the `-w` flag enables hot reloading of files, so making changes to source code will quickly be reflected in the local development environment.
 
 > [!NOTE]
 > **Optional:** For local development outside Docker, install [pnpm](https://pnpm.io/installation) and run `pnpm install` from the repository root, then manually add 
