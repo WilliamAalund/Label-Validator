@@ -11,9 +11,6 @@ export type SupportedMediaType = (typeof SUPPORTED_MEDIA_TYPES)[number];
 /** Decoded image size limit (client should compress before upload). */
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
-/** Max length for POST /labels/verify `requirements` field. */
-export const MAX_REQUIREMENTS_LENGTH = 280;
-
 /** Max images per POST /labels/verify-batch (Render free-tier demo limit). */
 export const MAX_BATCH_SIZE = 5;
 
@@ -23,7 +20,6 @@ export const BATCH_CONCURRENCY = 2;
 export type VerifyLabelImagePayload = {
   image: string;
   mediaType: SupportedMediaType;
-  requirements: string;
 };
 
 const LABEL_EXTRACTION_PROMPT = `You are a TTB label compliance reviewer. Extract all visible label fields from this alcohol beverage label and return them as JSON. Include: brand_name, class_type, abv, net_contents, bottler_address, government_warning. For government_warning, note whether "GOVERNMENT WARNING" appears in all caps and bold.
@@ -53,21 +49,10 @@ export function parseVerifyLabelImage(
     return { ok: false, error: "Request body must be a JSON object." };
   }
 
-  const { image, mediaType, requirements } = body as Record<string, unknown>;
+  const { image, mediaType } = body as Record<string, unknown>;
 
   if (typeof image !== "string" || image.trim() === "") {
     return { ok: false, error: "Field `image` is required (base64-encoded JPEG or PNG)." };
-  }
-
-  if (typeof requirements !== "string") {
-    return { ok: false, error: "Field `requirements` is required (string, max 280 characters)." };
-  }
-
-  if (requirements.length > MAX_REQUIREMENTS_LENGTH) {
-    return {
-      ok: false,
-      error: `Field \`requirements\` must be at most ${MAX_REQUIREMENTS_LENGTH} characters.`,
-    };
   }
 
   if (!isSupportedMediaType(mediaType)) {
@@ -96,7 +81,7 @@ export function parseVerifyLabelImage(
 
   return {
     ok: true,
-    payload: { image: normalized, mediaType, requirements },
+    payload: { image: normalized, mediaType },
   };
 }
 
@@ -122,22 +107,9 @@ function getAnthropicClient(): Anthropic | null {
   return new Anthropic({ apiKey });
 }
 
-function buildLabelExtractionPrompt(requirements: string): string {
-  const trimmed = requirements.trim();
-  if (trimmed === "") {
-    return LABEL_EXTRACTION_PROMPT;
-  }
-
-  return `${LABEL_EXTRACTION_PROMPT}
-
-Additional requirements from the submitter:
-${trimmed}`;
-}
-
 export async function analyzeLabel(
   imageBase64: string,
   mediaType: SupportedMediaType,
-  requirements: string,
 ): Promise<AnalyzeLabelOutcome> {
   const client = getAnthropicClient();
   if (!client) {
@@ -163,7 +135,7 @@ export async function analyzeLabel(
             },
             {
               type: "text",
-              text: buildLabelExtractionPrompt(requirements),
+              text: LABEL_EXTRACTION_PROMPT,
             },
           ],
         },
@@ -364,7 +336,7 @@ export async function verifyLabelBatch(
   items: VerifyLabelImagePayload[],
 ): Promise<VerifyLabelBatchItemResult[]> {
   return mapWithConcurrency(items, BATCH_CONCURRENCY, async (item, index) => {
-    const outcome = await analyzeLabel(item.image, item.mediaType, item.requirements);
+    const outcome = await analyzeLabel(item.image, item.mediaType);
     return analyzeOutcomeToBatchItem(index, outcome);
   });
 }

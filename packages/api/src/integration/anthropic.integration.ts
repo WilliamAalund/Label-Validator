@@ -24,7 +24,7 @@ function resolveImagePath(arg: string): string {
 function loadImagePayload(imagePath: string): {
   imagePath: string;
   mediaType: SupportedMediaType;
-  body: { image: string; mediaType: SupportedMediaType; requirements: string };
+  body: { image: string; mediaType: SupportedMediaType };
 } {
   const ext = path.extname(imagePath).toLowerCase();
   if (!SUPPORTED_EXTENSIONS.has(ext)) {
@@ -41,7 +41,7 @@ function loadImagePayload(imagePath: string): {
   return {
     imagePath,
     mediaType,
-    body: { image, mediaType, requirements: "" },
+    body: { image, mediaType },
   };
 }
 
@@ -73,11 +73,7 @@ async function main(): Promise<void> {
 
   console.log("[parseVerifyLabelImage] ok");
 
-  const outcome = await analyzeLabel(
-    parsed.payload.image,
-    parsed.payload.mediaType,
-    parsed.payload.requirements,
-  );
+  const outcome = await analyzeLabel(parsed.payload.image, parsed.payload.mediaType);
   if (outcome.status !== "success") {
     fail("analyzeLabel", outcome);
   }

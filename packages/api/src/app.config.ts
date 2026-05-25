@@ -67,7 +67,6 @@ labelRouter.post('/verify', verifyLimiter, async (req, res) => {
   const outcome = await analyzeLabel(
     parsedImage.payload.image,
     parsedImage.payload.mediaType,
-    parsedImage.payload.requirements,
   );
 
   const response = analyzeOutcomeToResponse(outcome);

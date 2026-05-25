@@ -2,22 +2,24 @@ import { z } from "zod";
 
 export const LABEL_EXTRACTION_SCHEMA_VERSION = 1 as const;
 
+const nullableString = z.union([z.string(), z.null()]);
+
 export const GovernmentWarningSchemaV1 = z
   .object({
-    text: z.string(),
-    all_caps_header: z.boolean(),
-    bold_header: z.boolean(),
+    text: nullableString,
+    all_caps_header: z.boolean().optional(),
+    bold_header: z.boolean().optional(),
   })
   .passthrough();
 
 export const LabelExtractionSchemaV1 = z
   .object({
     schema_version: z.literal(LABEL_EXTRACTION_SCHEMA_VERSION).optional(),
-    brand_name: z.string(),
-    class_type: z.string(),
-    abv: z.string(),
-    net_contents: z.string(),
-    bottler_address: z.string(),
+    brand_name: nullableString,
+    class_type: nullableString,
+    abv: nullableString,
+    net_contents: nullableString,
+    bottler_address: nullableString,
     government_warning: GovernmentWarningSchemaV1,
   })
   .passthrough();

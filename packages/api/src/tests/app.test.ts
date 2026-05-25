@@ -17,58 +17,22 @@ describe("POST /labels/verify", () => {
   const validBody = {
     image: validImage,
     mediaType: "image/jpeg" as const,
-    requirements: "",
   };
 
   it("returns 400 when image is missing", async () => {
     const response = await request(app)
       .post("/labels/verify")
-      .send({ mediaType: "image/jpeg", requirements: "" });
+      .send({ mediaType: "image/jpeg" });
 
     expect(response.status).toBe(400);
     expect(response.body.error).toMatch(/image/i);
   });
 
-  it("returns 400 when requirements is missing", async () => {
-    const response = await request(app)
-      .post("/labels/verify")
-      .send({ image: validImage, mediaType: "image/jpeg" });
-
-    expect(response.status).toBe(400);
-    expect(response.body.error).toMatch(/requirements/i);
-  });
-
-  it("returns 400 when requirements is not a string", async () => {
-    const response = await request(app)
-      .post("/labels/verify")
-      .send({ image: validImage, mediaType: "image/jpeg", requirements: 42 });
-
-    expect(response.status).toBe(400);
-    expect(response.body.error).toMatch(/requirements/i);
-  });
-
-  it("returns 400 when requirements exceeds 280 characters", async () => {
-    const response = await request(app)
-      .post("/labels/verify")
-      .send({
-        ...validBody,
-        requirements: "a".repeat(281),
-      });
-
-    expect(response.status).toBe(400);
-    expect(response.body.error).toMatch(/280/i);
-  });
-
-  it("accepts requirements up to 280 characters before analysis", async () => {
+  it("returns 503 when ANTHROPIC_API_KEY is not set for a valid payload", async () => {
     const previous = process.env.ANTHROPIC_API_KEY;
     delete process.env.ANTHROPIC_API_KEY;
 
-    const response = await request(app)
-      .post("/labels/verify")
-      .send({
-        ...validBody,
-        requirements: "a".repeat(280),
-      });
+    const response = await request(app).post("/labels/verify").send(validBody);
 
     if (previous !== undefined) {
       process.env.ANTHROPIC_API_KEY = previous;
@@ -81,7 +45,7 @@ describe("POST /labels/verify", () => {
   it("returns 400 for unsupported media type", async () => {
     const response = await request(app)
       .post("/labels/verify")
-      .send({ image: validImage, mediaType: "image/webp", requirements: "" });
+      .send({ image: validImage, mediaType: "image/webp" });
 
     expect(response.status).toBe(400);
     expect(response.body.error).toMatch(/mediaType/i);
@@ -90,7 +54,7 @@ describe("POST /labels/verify", () => {
   it("returns 400 for invalid base64", async () => {
     const response = await request(app)
       .post("/labels/verify")
-      .send({ image: "!!!not-base64!!!", mediaType: "image/png", requirements: "" });
+      .send({ image: "!!!not-base64!!!", mediaType: "image/png" });
 
     expect(response.status).toBe(400);
   });
@@ -98,10 +62,25 @@ describe("POST /labels/verify", () => {
   it("returns 400 when image is empty", async () => {
     const response = await request(app)
       .post("/labels/verify")
-      .send({ image: "   ", mediaType: "image/png", requirements: "" });
+      .send({ image: "   ", mediaType: "image/png" });
 
     expect(response.status).toBe(400);
     expect(response.body.error).toMatch(/image/i);
+  });
+
+  it("ignores extra fields such as requirements", async () => {
+    const previous = process.env.ANTHROPIC_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
+
+    const response = await request(app)
+      .post("/labels/verify")
+      .send({ ...validBody, requirements: "Brand must be Acme" });
+
+    if (previous !== undefined) {
+      process.env.ANTHROPIC_API_KEY = previous;
+    }
+
+    expect(response.status).toBe(503);
   });
 });
 
@@ -109,7 +88,6 @@ describe("POST /labels/verify-batch", () => {
   const validItem = {
     image: Buffer.from("x").toString("base64"),
     mediaType: "image/jpeg" as const,
-    requirements: "",
   };
 
   it("returns 400 when labels is missing", async () => {
