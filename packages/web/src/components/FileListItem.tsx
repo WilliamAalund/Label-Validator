@@ -117,8 +117,8 @@ const FileListItem = ({
                             >
                                 <WarningIcon />
                                 <span className="home-file-warning-tooltip" role="tooltip">
-                                    Expected label information is missing. Open Requirements
-                                    to enter the data before validating.
+                                    Expected application information is missing. Open Requirements
+                                    to enter values before validating.
                                 </span>
                             </span>
                         )}
@@ -127,7 +127,7 @@ const FileListItem = ({
 
             {expanded && (
                 <div className="home-file-item-requirements">
-                    <p className="home-file-requirements-title">Expected label values</p>
+                    <p className="home-file-requirements-title">Application Information</p>
                     <LabelExpectedFields
                         fields={[...fieldDefinitions]}
                         values={entry.expected}
