@@ -698,6 +698,10 @@ code {
   border-color: #e8a4ad;
 }
 
+.home-validated-item--incomplete {
+  border-color: #e8c9a0;
+}
+
 .home-validated-item-results {
   padding-top: 12px;
   border-top: 1px solid #e5e4e7;
@@ -742,6 +746,11 @@ code {
   color: #fff;
   background: #c41230;
   gap: 3px;
+}
+
+.home-validated-badge--incomplete {
+  color: #fff;
+  background: #b45309;
 }
 
 .home-validated-badge-icon {
@@ -818,6 +827,11 @@ code {
 .home-validated-status--neutral {
   color: var(--text, #5a5b5d);
   font-weight: 500;
+}
+
+.home-validated-status--warning {
+  color: #92400e;
+  font-weight: 600;
 }
 
 .home-validated-fields {

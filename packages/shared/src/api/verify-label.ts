@@ -1,6 +1,8 @@
 import type { LabelExtraction } from "../schemas/label/index.js";
 
-export type SupportedMediaType = "image/jpeg" | "image/png";
+export const SUPPORTED_MEDIA_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+
+export type SupportedMediaType = (typeof SUPPORTED_MEDIA_TYPES)[number];
 
 export type VerifyLabelImageRequest = {
   image: string;

@@ -9,12 +9,12 @@ import {
   type SupportedMediaType,
 } from "../util/funcs.js";
 
-// Run: pnpm --filter api test:integration -- <path/to/label.jpg|png>
+// Run: pnpm --filter api test:integration -- <path/to/label.jpg|png|webp>
 
 const repoRoot = process.env.INIT_CWD ?? path.resolve(process.cwd(), "../..");
 dotenv.config({ path: path.join(repoRoot, ".env") });
 
-const SUPPORTED_EXTENSIONS = new Set([".jpg", ".jpeg", ".png"]);
+const SUPPORTED_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp"]);
 
 function resolveImagePath(arg: string): string {
   const base = process.env.INIT_CWD ?? process.cwd();
@@ -28,14 +28,15 @@ function loadImagePayload(imagePath: string): {
 } {
   const ext = path.extname(imagePath).toLowerCase();
   if (!SUPPORTED_EXTENSIONS.has(ext)) {
-    throw new Error(`Image must be a .jpg, .jpeg, or .png file: ${imagePath}`);
+    throw new Error(`Image must be a .jpg, .jpeg, .png, or .webp file: ${imagePath}`);
   }
 
   if (!fs.existsSync(imagePath)) {
     throw new Error(`Image not found: ${imagePath}`);
   }
 
-  const mediaType: SupportedMediaType = ext === ".png" ? "image/png" : "image/jpeg";
+  const mediaType: SupportedMediaType =
+    ext === ".png" ? "image/png" : ext === ".webp" ? "image/webp" : "image/jpeg";
   const image = fs.readFileSync(imagePath).toString("base64");
 
   return {

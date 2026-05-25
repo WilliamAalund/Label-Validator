@@ -1,12 +1,13 @@
 import Anthropic from "@anthropic-ai/sdk";
 import {
+  SUPPORTED_MEDIA_TYPES,
   type LabelExtraction,
   type LabelExtractionParseResult,
+  type SupportedMediaType,
   parseLabelExtraction,
 } from "@label-validator/shared";
 
-export const SUPPORTED_MEDIA_TYPES = ["image/jpeg", "image/png"] as const;
-export type SupportedMediaType = (typeof SUPPORTED_MEDIA_TYPES)[number];
+export { SUPPORTED_MEDIA_TYPES, type SupportedMediaType };
 
 /** Decoded image size limit (client should compress before upload). */
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -35,9 +36,9 @@ function isSupportedMediaType(value: unknown): value is SupportedMediaType {
 
 /** Accepts raw base64 or a data URL from the client (\`data:image/jpeg;base64,...\`). */
 export function normalizeBase64Image(image: string): string {
-  const dataUrlMatch = /^data:image\/(jpeg|png);base64,(.+)$/i.exec(image.trim());
-  if (dataUrlMatch?.[1]) {
-    return dataUrlMatch[1];
+  const dataUrlMatch = /^data:image\/(jpeg|png|webp);base64,(.+)$/i.exec(image.trim());
+  if (dataUrlMatch?.[2]) {
+    return dataUrlMatch[2];
   }
   return image.trim();
 }
@@ -52,7 +53,7 @@ export function parseVerifyLabelImage(
   const { image, mediaType } = body as Record<string, unknown>;
 
   if (typeof image !== "string" || image.trim() === "") {
-    return { ok: false, error: "Field `image` is required (base64-encoded JPEG or PNG)." };
+    return { ok: false, error: "Field `image` is required (base64-encoded JPEG, PNG, or WebP)." };
   }
 
   if (!isSupportedMediaType(mediaType)) {

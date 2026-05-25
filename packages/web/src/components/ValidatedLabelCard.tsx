@@ -1,6 +1,6 @@
 import {
     getExtractedValueAtPath,
-    hasComparedComplianceFields,
+    hasIncompleteExpectedLabel,
     LABEL_EXTRACTION_FIELD_DEFINITIONS,
     type LabelFieldDefinition,
 } from "@label-validator/shared";
@@ -12,7 +12,27 @@ type ValidatedLabelCardProps = {
     result: LabelValidationResult;
 };
 
-type ComplianceBadgeStatus = "compliant" | "issues" | "none";
+type ComplianceBadgeStatus = "compliant" | "issues" | "incomplete";
+
+const WarningIcon = () => (
+    <svg
+        className="home-validated-badge-icon"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden
+    >
+        <path
+            d="M12 3L2 20h20L12 3z"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinejoin="round"
+        />
+        <path d="M12 9v5M12 17h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+);
 
 const CheckIcon = () => (
     <svg
@@ -54,11 +74,26 @@ const IssueIcon = () => (
 );
 
 type ComplianceBadgeProps = {
-    status: Exclude<ComplianceBadgeStatus, "none">;
+    status: ComplianceBadgeStatus;
     issueCount: number;
 };
 
 const ComplianceBadge = ({ status, issueCount }: ComplianceBadgeProps) => {
+    if (status === "incomplete") {
+        return (
+            <span
+                className="home-validated-badge home-validated-badge--incomplete"
+                tabIndex={0}
+                aria-label="No issues found, but application requirements were incomplete"
+            >
+                <WarningIcon />
+                <span className="home-validated-badge-tooltip" role="tooltip">
+                    AI analysis found no issues, but application requirements were missing.
+                </span>
+            </span>
+        );
+    }
+
     if (status === "compliant") {
         return (
             <span
@@ -133,19 +168,25 @@ const ValidatedLabelCard = ({ result }: ValidatedLabelCardProps) => {
         [result.complianceIssues],
     );
 
-    const comparedFields = useMemo(
-        () => hasComparedComplianceFields(result.expected),
+    const hasIncompleteRequirements = useMemo(
+        () => hasIncompleteExpectedLabel(result.expected),
         [result.expected],
     );
 
     const displayFields = useMemo(() => fieldRows(LABEL_EXTRACTION_FIELD_DEFINITIONS), []);
 
     const badgeStatus: ComplianceBadgeStatus = useMemo(() => {
-        if (!comparedFields) {
-            return "none";
+        if (result.complianceIssues.length > 0) {
+            return "issues";
         }
-        return result.complianceIssues.length === 0 ? "compliant" : "issues";
-    }, [comparedFields, result.complianceIssues.length]);
+        if (hasIncompleteRequirements) {
+            return "incomplete";
+        }
+        return "compliant";
+    }, [hasIncompleteRequirements, result.complianceIssues.length]);
+
+    const showIncompleteWarning =
+        hasIncompleteRequirements && result.complianceIssues.length === 0;
 
     const preview = previewUrl ? (
         <div
@@ -169,17 +210,14 @@ const ValidatedLabelCard = ({ result }: ValidatedLabelCardProps) => {
                     ? "home-upload-grid-cell home-validated-item home-validated-item--expanded"
                     : badgeStatus === "issues"
                       ? "home-upload-grid-cell home-validated-item home-validated-item--issues"
-                      : "home-upload-grid-cell home-validated-item"
+                      : badgeStatus === "incomplete"
+                        ? "home-upload-grid-cell home-validated-item home-validated-item--incomplete"
+                        : "home-upload-grid-cell home-validated-item"
             }
         >
             <div className="home-file-item-header">
                 <span className="home-file-name">{result.fileName}</span>
-                {badgeStatus !== "none" && (
-                    <ComplianceBadge
-                        status={badgeStatus}
-                        issueCount={result.complianceIssues.length}
-                    />
-                )}
+                <ComplianceBadge status={badgeStatus} issueCount={result.complianceIssues.length} />
             </div>
 
             <div className="home-grid-card-body">
@@ -211,10 +249,9 @@ const ValidatedLabelCard = ({ result }: ValidatedLabelCardProps) => {
                 {expanded && (
                     <div className="home-grid-card-panel home-validated-item-results">
                         <p className="home-validated-results-title">Validation Results</p>
-                        {!comparedFields && (
-                            <p className="home-validated-status home-validated-status--neutral" role="status">
-                                Enter application information in Requirements before validating to compare
-                                against the label.
+                        {showIncompleteWarning && (
+                            <p className="home-validated-status home-validated-status--warning" role="status">
+                                AI analysis found no issues, but application requirements were missing.
                             </p>
                         )}
                         <dl className="home-result-fields home-validated-fields">

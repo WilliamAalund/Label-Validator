@@ -45,10 +45,26 @@ describe("POST /labels/verify", () => {
   it("returns 400 for unsupported media type", async () => {
     const response = await request(app)
       .post("/labels/verify")
-      .send({ image: validImage, mediaType: "image/webp" });
+      .send({ image: validImage, mediaType: "image/gif" });
 
     expect(response.status).toBe(400);
     expect(response.body.error).toMatch(/mediaType/i);
+  });
+
+  it("accepts image/webp media type", async () => {
+    const previous = process.env.ANTHROPIC_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
+
+    const response = await request(app)
+      .post("/labels/verify")
+      .send({ image: validImage, mediaType: "image/webp" });
+
+    if (previous !== undefined) {
+      process.env.ANTHROPIC_API_KEY = previous;
+    }
+
+    expect(response.status).toBe(503);
+    expect(response.body.error).toMatch(/not configured/i);
   });
 
   it("returns 400 for invalid base64", async () => {

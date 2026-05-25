@@ -23,6 +23,7 @@ export {
 } from "./schemas/label/index.js";
 
 export {
+  SUPPORTED_MEDIA_TYPES,
   type SchemaValidationIssues,
   type SupportedMediaType,
   type VerifyLabelBatchItemResult,

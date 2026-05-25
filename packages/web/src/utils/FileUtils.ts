@@ -1,4 +1,6 @@
-import type { SupportedMediaType } from "@label-validator/shared";
+import { SUPPORTED_MEDIA_TYPES, type SupportedMediaType } from "@label-validator/shared";
+
+const SUPPORTED_MEDIA_TYPE_SET = new Set<string>(SUPPORTED_MEDIA_TYPES);
 
 /** Reads a file as raw base64 (no `data:image/...;base64,` prefix). */
 export function fileToBase64(file: File): Promise<string> {
@@ -19,5 +21,17 @@ export function fileToBase64(file: File): Promise<string> {
 }
 
 export function toSupportedMediaType(file: File): SupportedMediaType {
-    return file.type === "image/png" ? "image/png" : "image/jpeg";
+    if (SUPPORTED_MEDIA_TYPE_SET.has(file.type)) {
+        return file.type as SupportedMediaType;
+    }
+
+    const name = file.name.toLowerCase();
+    if (name.endsWith(".webp")) {
+        return "image/webp";
+    }
+    if (name.endsWith(".png")) {
+        return "image/png";
+    }
+
+    return "image/jpeg";
 }

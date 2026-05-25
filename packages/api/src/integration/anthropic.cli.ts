@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import * as fs from "fs";
 import * as path from "path";
 
-// Manual CLI: pnpm --filter api apitest -- <path/to/image.jpg|png>
+// Manual CLI: pnpm --filter api apitest -- <path/to/image.jpg|png|webp>
 
 const repoRoot = process.env.INIT_CWD ?? path.resolve(process.cwd(), "../..");
 dotenv.config({ path: path.join(repoRoot, ".env") });
@@ -17,8 +17,8 @@ if (process.argv[2] === undefined) {
 const imagePath = path.resolve(process.env.INIT_CWD ?? process.cwd(), process.argv[2]);
 const ext = path.extname(imagePath).toLowerCase();
 
-if (![".jpg", ".jpeg", ".png"].includes(ext)) {
-  console.error("Image must be a .jpg, .jpeg, or .png file");
+if (![".jpg", ".jpeg", ".png", ".webp"].includes(ext)) {
+  console.error("Image must be a .jpg, .jpeg, .png, or .webp file");
   process.exit(1);
 }
 
@@ -40,7 +40,8 @@ async function testLabelExtraction(imagePath: string): Promise<void> {
   const imageBuffer = fs.readFileSync(imagePath);
   const base64Image = imageBuffer.toString("base64");
   const ext = path.extname(imagePath).toLowerCase();
-  const mediaType = ext === ".png" ? "image/png" : "image/jpeg";
+  const mediaType =
+    ext === ".png" ? "image/png" : ext === ".webp" ? "image/webp" : "image/jpeg";
 
   const response = await client.messages.create({
     model: "claude-opus-4-5",
