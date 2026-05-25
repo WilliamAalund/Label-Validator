@@ -1,4 +1,10 @@
 import {
+    createEmptyExpectedLabel,
+    LABEL_EXTRACTION_FIELD_DEFINITIONS,
+    setExpectedValueAtPath,
+    type ExpectedLabelValue,
+} from "@label-validator/shared";
+import {
     useCallback,
     useMemo,
     useRef,
@@ -10,10 +16,20 @@ import LabelContext, {
     MAX_LABEL_FILES,
     type LabelContextType,
     type LabelValidationResult,
+    type PendingLabelFile,
 } from "./LabelContext";
 import { validateImage } from "../routes/ValidateRoutes";
 import { fileToBase64, toSupportedMediaType } from "../utils/FileUtils";
+
 const isImageFile = (file: File) => file.type.startsWith("image/");
+
+function createPendingFile(file: File): PendingLabelFile {
+    return {
+        id: crypto.randomUUID(),
+        file,
+        expected: createEmptyExpectedLabel(),
+    };
+}
 
 async function extractDroppedImages(dataTransfer: DataTransfer): Promise<File[]> {
     const fromFiles = Array.from(dataTransfer.files).filter(isImageFile);
@@ -49,33 +65,48 @@ type LabelProviderProps = {
 };
 
 const LabelProvider = ({ children }: LabelProviderProps) => {
-    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [pendingFiles, setPendingFiles] = useState<PendingLabelFile[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [validationResults, setValidationResults] = useState<LabelValidationResult[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const skipClickAfterDropRef = useRef(false);
 
-    const remainingSlots = MAX_LABEL_FILES - selectedFiles.length;
-    const atMaxFiles = selectedFiles.length >= MAX_LABEL_FILES;
-    const canSubmit = selectedFiles.length > 0 && !isSubmitting;
+    const remainingSlots = MAX_LABEL_FILES - pendingFiles.length;
+    const atMaxFiles = pendingFiles.length >= MAX_LABEL_FILES;
+    const canSubmit = pendingFiles.length > 0 && !isSubmitting;
 
     const addFiles = useCallback((incoming: File[]) => {
         const images = incoming.filter(isImageFile);
         if (images.length === 0) return;
 
-        setSelectedFiles((prev) => {
+        setPendingFiles((prev) => {
             if (prev.length >= MAX_LABEL_FILES) return prev;
-            return [...prev, ...images].slice(0, MAX_LABEL_FILES);
+            const slotsLeft = MAX_LABEL_FILES - prev.length;
+            const next = images.slice(0, slotsLeft).map(createPendingFile);
+            return [...prev, ...next];
         });
     }, []);
 
-    const removeFile = useCallback((index: number) => {
-        setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    const updateExpectedValue = useCallback(
+        (id: string, path: string, value: ExpectedLabelValue) => {
+            setPendingFiles((prev) =>
+                prev.map((entry) =>
+                    entry.id === id
+                        ? { ...entry, expected: setExpectedValueAtPath(entry.expected, path, value) }
+                        : entry,
+                ),
+            );
+        },
+        [],
+    );
+
+    const removeFile = useCallback((id: string) => {
+        setPendingFiles((prev) => prev.filter((entry) => entry.id !== id));
     }, []);
 
     const clearFiles = useCallback(() => {
-        setSelectedFiles([]);
+        setPendingFiles([]);
     }, []);
 
     const addFilesFromInput = useCallback(
@@ -99,10 +130,11 @@ const LabelProvider = ({ children }: LabelProviderProps) => {
         setError(null);
         setIsSubmitting(true);
 
-        const filesToProcess = [...selectedFiles];
+        const filesToProcess = [...pendingFiles];
 
         try {
-            for (const file of filesToProcess) {
+            for (const entry of filesToProcess) {
+                const { file, expected } = entry;
                 let base64: string;
                 try {
                     base64 = await fileToBase64(file);
@@ -125,37 +157,39 @@ const LabelProvider = ({ children }: LabelProviderProps) => {
                     id: crypto.randomUUID(),
                     file,
                     fileName: file.name,
+                    expected,
                     data: result.data,
                 };
 
                 setValidationResults((prev) => [...prev, completed]);
-                setSelectedFiles((prev) => prev.filter((f) => f !== file));
+                setPendingFiles((prev) => prev.filter((e) => e.id !== entry.id));
             }
         } catch {
             setError("Unexpected error while validating labels.");
         } finally {
             setIsSubmitting(false);
         }
-    }, [selectedFiles]);
+    }, [pendingFiles]);
 
     const openFilePicker = useCallback(() => {
         if (skipClickAfterDropRef.current) {
             skipClickAfterDropRef.current = false;
             return;
         }
-        if (selectedFiles.length < MAX_LABEL_FILES) {
+        if (pendingFiles.length < MAX_LABEL_FILES) {
             fileInputRef.current?.click();
         }
-    }, [selectedFiles.length]);
+    }, [pendingFiles.length]);
 
     const addMorePrompt = useMemo(() => {
-        return `${selectedFiles.length} / ${MAX_LABEL_FILES} files uploaded`;
-    }, [selectedFiles.length, atMaxFiles, remainingSlots]);
+        return `${pendingFiles.length} / ${MAX_LABEL_FILES} files uploaded`;
+    }, [pendingFiles.length]);
 
     const value = useMemo<LabelContextType>(
         () => ({
             maxFiles: MAX_LABEL_FILES,
-            selectedFiles,
+            labelFieldDefinitions: LABEL_EXTRACTION_FIELD_DEFINITIONS,
+            pendingFiles,
             remainingSlots,
             atMaxFiles,
             canSubmit,
@@ -165,6 +199,7 @@ const LabelProvider = ({ children }: LabelProviderProps) => {
             validationResults,
             isSubmitting,
             addFiles,
+            updateExpectedValue,
             removeFile,
             clearFiles,
             addFilesFromInput,
@@ -174,7 +209,7 @@ const LabelProvider = ({ children }: LabelProviderProps) => {
             fileInputRef,
         }),
         [
-            selectedFiles,
+            pendingFiles,
             remainingSlots,
             atMaxFiles,
             canSubmit,
@@ -183,6 +218,7 @@ const LabelProvider = ({ children }: LabelProviderProps) => {
             validationResults,
             isSubmitting,
             addFiles,
+            updateExpectedValue,
             removeFile,
             clearFiles,
             addFilesFromInput,

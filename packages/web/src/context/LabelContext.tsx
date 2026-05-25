@@ -1,18 +1,31 @@
-import type { LabelExtraction } from "@label-validator/shared";
+import type {
+    ExpectedLabelValue,
+    ExpectedLabelValues,
+    LabelExtraction,
+    LabelFieldDefinition,
+} from "@label-validator/shared";
 import { createContext, type ChangeEvent, type RefObject } from "react";
 
 export const MAX_LABEL_FILES = 5 as const;
+
+export type PendingLabelFile = {
+    id: string;
+    file: File;
+    expected: ExpectedLabelValues;
+};
 
 export type LabelValidationResult = {
     id: string;
     file: File;
     fileName: string;
+    expected: ExpectedLabelValues;
     data: LabelExtraction;
 };
 
 export type LabelContextType = {
     maxFiles: typeof MAX_LABEL_FILES;
-    selectedFiles: File[];
+    labelFieldDefinitions: readonly LabelFieldDefinition[];
+    pendingFiles: PendingLabelFile[];
     remainingSlots: number;
     atMaxFiles: boolean;
     canSubmit: boolean;
@@ -23,7 +36,8 @@ export type LabelContextType = {
     isSubmitting: boolean;
 
     addFiles: (files: File[]) => void;
-    removeFile: (index: number) => void;
+    updateExpectedValue: (id: string, path: string, value: ExpectedLabelValue) => void;
+    removeFile: (id: string) => void;
     clearFiles: () => void;
     addFilesFromInput: (event: ChangeEvent<HTMLInputElement>) => void;
     addFilesFromDataTransfer: (dataTransfer: DataTransfer) => Promise<void>;

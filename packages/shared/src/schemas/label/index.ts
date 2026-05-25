@@ -22,6 +22,20 @@ export type LabelExtractionParseResult = z.SafeParseReturnType<
   LabelExtraction
 >;
 
+export {
+  LABEL_EXTRACTION_FIELD_DEFINITIONS,
+  type LabelFieldDefinition,
+} from "./fields.js";
+
+export {
+  createEmptyExpectedLabel,
+  getExpectedValueAtPath,
+  hasIncompleteExpectedLabel,
+  setExpectedValueAtPath,
+  type ExpectedLabelValue,
+  type ExpectedLabelValues,
+} from "./expected-values.js";
+
 export function parseLabelExtraction(data: unknown): LabelExtractionParseResult {
   return LabelExtractionSchema.safeParse(data);
 }

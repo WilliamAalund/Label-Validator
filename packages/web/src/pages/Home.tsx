@@ -13,12 +13,14 @@ const Home = () => {
 
     const {
         maxFiles,
-        selectedFiles,
+        labelFieldDefinitions,
+        pendingFiles,
         atMaxFiles,
         canSubmit,
         addMorePrompt,
         addFilesFromInput,
         addFilesFromDataTransfer,
+        updateExpectedValue,
         removeFile,
         submitFiles,
         openFilePicker,
@@ -68,11 +70,15 @@ const Home = () => {
                 />
 
                 <ul className="home-upload-grid" aria-label="Label images to validate">
-                    {selectedFiles.map((file, index) => (
+                    {pendingFiles.map((entry) => (
                         <FileListItem
-                            key={`${file.name}-${file.lastModified}-${index}`}
-                            file={file}
-                            onRemove={() => removeFile(index)}
+                            key={entry.id}
+                            entry={entry}
+                            fieldDefinitions={labelFieldDefinitions}
+                            onExpectedChange={(path, value) =>
+                                updateExpectedValue(entry.id, path, value)
+                            }
+                            onRemove={() => removeFile(entry.id)}
                         />
                     ))}
                     <li className="home-upload-grid-cell home-upload-grid-cell--drop">
@@ -104,8 +110,8 @@ const Home = () => {
                 <button type="button" onClick={submitFiles} disabled={!canSubmit}>
                     {isSubmitting
                         ? "Validating…"
-                        : `Validate ${selectedFiles.length > 0 ? `${selectedFiles.length} ` : ""}${
-                            selectedFiles.length === 1 ? "File" : "Files"
+                        : `Validate ${pendingFiles.length > 0 ? `${pendingFiles.length} ` : ""}${
+                            pendingFiles.length === 1 ? "File" : "Files"
                         }`}
                 </button>
 
