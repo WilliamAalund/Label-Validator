@@ -1,4 +1,5 @@
 import {
+    compareExpectedToExtracted,
     createEmptyExpectedLabel,
     LABEL_EXTRACTION_FIELD_DEFINITIONS,
     setExpectedValueAtPath,
@@ -173,6 +174,7 @@ const LabelProvider = ({ children }: LabelProviderProps) => {
                         fileName: entry.file.name,
                         expected: entry.expected,
                         data: item.data,
+                        complianceIssues: compareExpectedToExtracted(item.data, entry.expected),
                     });
                     continue;
                 }

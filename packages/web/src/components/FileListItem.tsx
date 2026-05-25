@@ -49,6 +49,21 @@ const FileListItem = ({
         [entry.expected, fieldDefinitions],
     );
 
+    const preview = previewUrl ? (
+        <div
+            className="home-file-preview-wrap"
+            tabIndex={0}
+            aria-label={`${entry.file.name} — hover to view full image`}
+        >
+            <img src={previewUrl} alt={entry.file.name} className="home-file-preview" />
+            <div className="home-file-preview-zoom">
+                <img src={previewUrl} alt="" />
+            </div>
+        </div>
+    ) : (
+        <div className="home-file-preview-placeholder" aria-hidden />
+    );
+
     return (
         <li
             className={
@@ -57,37 +72,22 @@ const FileListItem = ({
                     : "home-upload-grid-cell home-file-item"
             }
         >
-            <div className="home-file-item-compact">
-                <div className="home-file-item-header">
-                    <span className="home-file-name">{entry.file.name}</span>
-                    <button
-                        type="button"
-                        className="home-file-remove"
-                        onClick={onRemove}
-                        aria-label={`Remove ${entry.file.name}`}
-                    >
-                        ×
-                    </button>
-                </div>
-                {previewUrl ? (
-                    <div
-                        className="home-file-preview-wrap"
-                        tabIndex={0}
-                        aria-label={`${entry.file.name} — hover to view full image`}
-                    >
-                        <img
-                            src={previewUrl}
-                            alt={entry.file.name}
-                            className="home-file-preview"
-                        />
-                        <div className="home-file-preview-zoom">
-                            <img src={previewUrl} alt="" />
-                        </div>
-                    </div>
-                ) : (
-                    <div className="home-file-preview-placeholder" aria-hidden />
-                )}
-                <div className="home-file-item-actions-row">
+            <div className="home-file-item-header">
+                <span className="home-file-name">{entry.file.name}</span>
+                <button
+                    type="button"
+                    className="home-file-remove"
+                    onClick={onRemove}
+                    aria-label={`Remove ${entry.file.name}`}
+                >
+                    ×
+                </button>
+            </div>
+
+            <div className="home-grid-card-body">
+                <div className="home-grid-card-media">
+                    {preview}
+                    <div className="home-file-item-actions-row">
                         <button
                             type="button"
                             className="home-file-expand"
@@ -122,19 +122,20 @@ const FileListItem = ({
                                 </span>
                             </span>
                         )}
+                    </div>
                 </div>
-            </div>
 
-            {expanded && (
-                <div className="home-file-item-requirements">
-                    <p className="home-file-requirements-title">Application Information</p>
-                    <LabelExpectedFields
-                        fields={[...fieldDefinitions]}
-                        values={entry.expected}
-                        onChange={onExpectedChange}
-                    />
-                </div>
-            )}
+                {expanded && (
+                    <div className="home-grid-card-panel home-file-item-requirements">
+                        <p className="home-file-requirements-title">Application Information</p>
+                        <LabelExpectedFields
+                            fields={[...fieldDefinitions]}
+                            values={entry.expected}
+                            onChange={onExpectedChange}
+                        />
+                    </div>
+                )}
+            </div>
         </li>
     );
 };

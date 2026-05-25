@@ -104,23 +104,23 @@ const Home = () => {
                     </li>
                 </ul>
 
-                {addMorePrompt && <p>{addMorePrompt}</p>}
-
-
-                <button type="button" onClick={submitFiles} disabled={!canSubmit}>
-                    {isSubmitting
-                        ? "Validating…"
-                        : `Validate ${pendingFiles.length > 0 ? `${pendingFiles.length} ` : ""}${
-                            pendingFiles.length === 1 ? "File" : "Files"
-                        }`}
-                </button>
+                <div className="home-submit">
+                    {addMorePrompt && <p className="home-file-count">{addMorePrompt}</p>}
+                    <button type="button" onClick={submitFiles} disabled={!canSubmit}>
+                        {isSubmitting
+                            ? "Validating…"
+                            : `Validate ${pendingFiles.length > 0 ? `${pendingFiles.length} ` : ""}${
+                                pendingFiles.length === 1 ? "Application" : "Applications"
+                            }`}
+                    </button>
+                </div>
 
                 {isSubmitting && <p className="home-status">Analyzing label(s)…</p>}
 
                 {validationResults.length > 0 && (
                     <section className="home-validated" aria-live="polite">
-                        <h2>Validated labels</h2>
-                        <ul className="home-validated-list">
+                        <h2>Validation Results</h2>
+                        <ul className="home-upload-grid" aria-label="Validated labels">
                             {validationResults.map((result) => (
                                 <ValidatedLabelCard key={result.id} result={result} />
                             ))}

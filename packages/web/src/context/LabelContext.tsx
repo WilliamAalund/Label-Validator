@@ -1,6 +1,7 @@
 import type {
     ExpectedLabelValue,
     ExpectedLabelValues,
+    LabelComplianceIssue,
     LabelExtraction,
     LabelFieldDefinition,
 } from "@label-validator/shared";
@@ -20,6 +21,7 @@ export type LabelValidationResult = {
     fileName: string;
     expected: ExpectedLabelValues;
     data: LabelExtraction;
+    complianceIssues: LabelComplianceIssue[];
 };
 
 export type LabelContextType = {

@@ -32,6 +32,13 @@ export {
   type ExpectedLabelValues,
 } from "./expected-values.js";
 
+export {
+  compareExpectedToExtracted,
+  getExtractedValueAtPath,
+  hasComparedComplianceFields,
+  type LabelComplianceIssue,
+} from "./compliance.js";
+
 export function parseLabelExtraction(data: unknown): LabelExtractionParseResult {
   return LabelExtractionSchema.safeParse(data);
 }

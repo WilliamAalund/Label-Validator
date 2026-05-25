@@ -1,3 +1,10 @@
+import {
+    getExtractedValueAtPath,
+    hasComparedComplianceFields,
+    LABEL_EXTRACTION_FIELD_DEFINITIONS,
+    type LabelFieldDefinition,
+} from "@label-validator/shared";
+import { useMemo, useState } from "react";
 import type { LabelValidationResult } from "../context/LabelContext";
 import { useObjectUrl } from "../hooks/useObjectUrl";
 
@@ -5,45 +12,243 @@ type ValidatedLabelCardProps = {
     result: LabelValidationResult;
 };
 
-const ValidatedLabelCard = ({ result }: ValidatedLabelCardProps) => {
-    const previewUrl = useObjectUrl(result.file);
+type ComplianceBadgeStatus = "compliant" | "issues" | "none";
+
+const CheckIcon = () => (
+    <svg
+        className="home-validated-badge-icon"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden
+    >
+        <path
+            d="M5 12l4 4L19 6"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+    </svg>
+);
+
+const IssueIcon = () => (
+    <svg
+        className="home-validated-badge-icon"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden
+    >
+        <path
+            d="M6 6l12 12M18 6L6 18"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+        />
+    </svg>
+);
+
+type ComplianceBadgeProps = {
+    status: Exclude<ComplianceBadgeStatus, "none">;
+    issueCount: number;
+};
+
+const ComplianceBadge = ({ status, issueCount }: ComplianceBadgeProps) => {
+    if (status === "compliant") {
+        return (
+            <span
+                className="home-validated-badge home-validated-badge--compliant"
+                tabIndex={0}
+                aria-label="Label is compliant with application requirements"
+            >
+                <CheckIcon />
+                <img src="/ai.svg" alt="" className="home-validated-badge-ai" width={14} height={14} aria-hidden />
+                <span className="home-validated-badge-tooltip" role="tooltip">
+                    AI analysis found that all application requirements match the label text.
+                </span>
+            </span>
+        );
+    }
+
+    const countLabel = issueCount === 1 ? "1 issue" : `${issueCount} issues`;
 
     return (
-        <li className="home-validated-item">
-            {previewUrl ? (
-                <img src={previewUrl} alt={result.fileName} className="home-validated-preview" />
-            ) : (
-                <div className="home-validated-preview-placeholder" aria-hidden />
-            )}
-            <details className="home-validated-details">
-                <summary>Validation results — {result.fileName}</summary>
-                <dl className="home-result-fields home-validated-fields">
-                    <div>
-                        <dt>Brand</dt>
-                        <dd>{result.data.brand_name}</dd>
+        <span
+            className="home-validated-badge home-validated-badge--issues"
+            tabIndex={0}
+            aria-label={`${countLabel} — label does not match application requirements`}
+        >
+            <IssueIcon />
+            <span className="home-validated-badge-count" aria-hidden>
+                {issueCount}
+            </span>
+            <span className="home-validated-badge-tooltip" role="tooltip">
+                AI analysis found that {issueCount} field{issueCount === 1 ? " value" : " values"} do not
+                match application requirements.
+            </span>
+        </span>
+    );
+};
+
+function formatExtractedValue(value: string | boolean | null | undefined): string {
+    if (value === null || value === undefined) {
+        return "—";
+    }
+    if (typeof value === "boolean") {
+        return value ? "Yes" : "No";
+    }
+    return value.trim() === "" ? "—" : value;
+}
+
+function formatExpectedValue(value: string | boolean): string {
+    if (typeof value === "boolean") {
+        return value ? "Yes" : "No";
+    }
+    return value;
+}
+
+function fieldRows(fields: readonly LabelFieldDefinition[]): LabelFieldDefinition[] {
+    const rows: LabelFieldDefinition[] = [];
+    for (const field of fields) {
+        if (field.kind === "group") {
+            rows.push(...fieldRows(field.fields));
+            continue;
+        }
+        rows.push(field);
+    }
+    return rows;
+}
+
+const ValidatedLabelCard = ({ result }: ValidatedLabelCardProps) => {
+    const previewUrl = useObjectUrl(result.file);
+    const [expanded, setExpanded] = useState(false);
+
+    const issueByPath = useMemo(
+        () => new Map(result.complianceIssues.map((issue) => [issue.path, issue])),
+        [result.complianceIssues],
+    );
+
+    const comparedFields = useMemo(
+        () => hasComparedComplianceFields(result.expected),
+        [result.expected],
+    );
+
+    const displayFields = useMemo(() => fieldRows(LABEL_EXTRACTION_FIELD_DEFINITIONS), []);
+
+    const badgeStatus: ComplianceBadgeStatus = useMemo(() => {
+        if (!comparedFields) {
+            return "none";
+        }
+        return result.complianceIssues.length === 0 ? "compliant" : "issues";
+    }, [comparedFields, result.complianceIssues.length]);
+
+    const preview = previewUrl ? (
+        <div
+            className="home-file-preview-wrap"
+            tabIndex={0}
+            aria-label={`${result.fileName} — hover to view full image`}
+        >
+            <img src={previewUrl} alt={result.fileName} className="home-file-preview" />
+            <div className="home-file-preview-zoom">
+                <img src={previewUrl} alt="" />
+            </div>
+        </div>
+    ) : (
+        <div className="home-file-preview-placeholder" aria-hidden />
+    );
+
+    return (
+        <li
+            className={
+                expanded
+                    ? "home-upload-grid-cell home-validated-item home-validated-item--expanded"
+                    : badgeStatus === "issues"
+                      ? "home-upload-grid-cell home-validated-item home-validated-item--issues"
+                      : "home-upload-grid-cell home-validated-item"
+            }
+        >
+            <div className="home-file-item-header">
+                <span className="home-file-name">{result.fileName}</span>
+                {badgeStatus !== "none" && (
+                    <ComplianceBadge
+                        status={badgeStatus}
+                        issueCount={result.complianceIssues.length}
+                    />
+                )}
+            </div>
+
+            <div className="home-grid-card-body">
+                <div className="home-grid-card-media">
+                    {preview}
+                    <div className="home-file-item-actions-row">
+                        <button
+                            type="button"
+                            className="home-file-expand"
+                            aria-expanded={expanded}
+                            aria-label={
+                                expanded ? "Collapse validation results" : "Expand validation results"
+                            }
+                            onClick={() => setExpanded((open) => !open)}
+                        >
+                            <span
+                                className={
+                                    expanded
+                                        ? "home-file-expand-icon home-file-expand-icon--open"
+                                        : "home-file-expand-icon"
+                                }
+                                aria-hidden
+                            />
+                            <span className="home-file-expand-label">Results</span>
+                        </button>
                     </div>
-                    <div>
-                        <dt>Class / type</dt>
-                        <dd>{result.data.class_type}</dd>
+                </div>
+
+                {expanded && (
+                    <div className="home-grid-card-panel home-validated-item-results">
+                        <p className="home-validated-results-title">Validation Results</p>
+                        {!comparedFields && (
+                            <p className="home-validated-status home-validated-status--neutral" role="status">
+                                Enter application information in Requirements before validating to compare
+                                against the label.
+                            </p>
+                        )}
+                        <dl className="home-result-fields home-validated-fields">
+                            {displayFields.map((field) => {
+                                if (field.kind === "group") {
+                                    return null;
+                                }
+
+                                const extracted = getExtractedValueAtPath(result.data, field.path);
+                                const issue = issueByPath.get(field.path);
+
+                                return (
+                                    <div
+                                        key={field.path}
+                                        className={
+                                            issue
+                                                ? "home-validated-field home-validated-field--issue"
+                                                : "home-validated-field"
+                                        }
+                                    >
+                                        <dt>{field.label}</dt>
+                                        <dd>{formatExtractedValue(extracted)}</dd>
+                                        {issue && (
+                                            <p className="home-validated-field-note">
+                                                Expected {formatExpectedValue(issue.expected)}
+                                            </p>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </dl>
                     </div>
-                    <div>
-                        <dt>ABV</dt>
-                        <dd>{result.data.abv}</dd>
-                    </div>
-                    <div>
-                        <dt>Net contents</dt>
-                        <dd>{result.data.net_contents}</dd>
-                    </div>
-                    <div>
-                        <dt>Bottler address</dt>
-                        <dd>{result.data.bottler_address}</dd>
-                    </div>
-                    <div>
-                        <dt>Government warning</dt>
-                        <dd>{result.data.government_warning.text}</dd>
-                    </div>
-                </dl>
-            </details>
+                )}
+            </div>
         </li>
     );
 };
