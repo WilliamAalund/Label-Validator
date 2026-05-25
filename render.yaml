@@ -28,7 +28,7 @@ projects:
                 fromService:
                   name: web
                   type: web
-                  envVarKey: WEB_URL
+                  envVarKey: RENDER_EXTERNAL_URL
             region: ohio
 
           - type: web
