@@ -84,7 +84,11 @@ export function setExpectedValueAtPath(
     return { ...values, [path]: value };
   }
 
-  const [head, ...rest] = parts;
+  const head = parts[0];
+  if (head === undefined) {
+    return values;
+  }
+
   const nested =
     typeof values[head] === "object" && values[head] !== null
       ? (values[head] as ExpectedLabelValues)
@@ -92,6 +96,6 @@ export function setExpectedValueAtPath(
 
   return {
     ...values,
-    [head]: setExpectedValueAtPath(nested, rest.join("."), value),
+    [head]: setExpectedValueAtPath(nested, parts.slice(1).join("."), value),
   };
 }

@@ -18,7 +18,7 @@ import LabelContext, {
     type LabelValidationResult,
     type PendingLabelFile,
 } from "./LabelContext";
-import { validateImage } from "../routes/ValidateRoutes";
+import { batchItemErrorMessage, validateImageBatch } from "../routes/ValidateRoutes";
 import { fileToBase64, toSupportedMediaType } from "../utils/FileUtils";
 
 const isImageFile = (file: File) => file.type.startsWith("image/");
@@ -133,36 +133,60 @@ const LabelProvider = ({ children }: LabelProviderProps) => {
         const filesToProcess = [...pendingFiles];
 
         try {
+            const labels: { image: string; mediaType: ReturnType<typeof toSupportedMediaType> }[] =
+                [];
+
             for (const entry of filesToProcess) {
-                const { file, expected } = entry;
-                let base64: string;
                 try {
-                    base64 = await fileToBase64(file);
+                    labels.push({
+                        image: await fileToBase64(entry.file),
+                        mediaType: toSupportedMediaType(entry.file),
+                    });
                 } catch {
-                    setError(`Could not read "${file.name}".`);
+                    setError(`Could not read "${entry.file.name}".`);
                     return;
                 }
+            }
 
-                const result = await validateImage({
-                    image: base64,
-                    mediaType: toSupportedMediaType(file),
-                });
+            const batchResult = await validateImageBatch({ labels });
 
-                if (!result.ok) {
-                    setError(`${file.name}: ${result.body.error}`);
-                    return;
+            if (!batchResult.ok) {
+                setError(batchResult.body.error);
+                return;
+            }
+
+            const completed: LabelValidationResult[] = [];
+            const completedIds = new Set<string>();
+            const failedMessages: string[] = [];
+
+            for (const item of batchResult.data.results) {
+                const entry = filesToProcess[item.index];
+                if (!entry) {
+                    continue;
                 }
 
-                const completed: LabelValidationResult = {
-                    id: crypto.randomUUID(),
-                    file,
-                    fileName: file.name,
-                    expected,
-                    data: result.data,
-                };
+                if (item.status === "success") {
+                    completedIds.add(entry.id);
+                    completed.push({
+                        id: crypto.randomUUID(),
+                        file: entry.file,
+                        fileName: entry.file.name,
+                        expected: entry.expected,
+                        data: item.data,
+                    });
+                    continue;
+                }
 
-                setValidationResults((prev) => [...prev, completed]);
-                setPendingFiles((prev) => prev.filter((e) => e.id !== entry.id));
+                failedMessages.push(`${entry.file.name}: ${batchItemErrorMessage(item)}`);
+            }
+
+            if (completed.length > 0) {
+                setValidationResults((prev) => [...prev, ...completed]);
+                setPendingFiles((prev) => prev.filter((e) => !completedIds.has(e.id)));
+            }
+
+            if (failedMessages.length > 0) {
+                setError(failedMessages.join(" "));
             }
         } catch {
             setError("Unexpected error while validating labels.");

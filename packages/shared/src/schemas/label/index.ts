@@ -1,9 +1,5 @@
 import { z } from "zod";
-import {
-  LABEL_EXTRACTION_SCHEMA_VERSION,
-  LabelExtractionSchemaV1,
-  type LabelExtractionV1,
-} from "./v1.js";
+import { LabelExtractionSchemaV1, type LabelExtractionV1 } from "./v1.js";
 
 export {
   LABEL_EXTRACTION_SCHEMA_VERSION,

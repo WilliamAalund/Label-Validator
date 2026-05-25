@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { GovernmentWarningSchemaV1, LabelExtractionSchemaV1 } from "./v1.js";
+import { LabelExtractionSchemaV1 } from "./v1.js";
 
 const SKIP_KEYS = new Set(["schema_version"]);
 
