@@ -54,20 +54,20 @@ const Home = () => {
 
     return (
         <div className="home">
-            <p>Upload label images to get started. You can submit up to {maxFiles} files at once.</p>
+            <div className="home-content">
+                <p>Upload label images to get started. You can submit up to {maxFiles} files at once.</p>
 
-            <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={addFilesFromInput}
-                disabled={atMaxFiles}
-                hidden
-            />
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={addFilesFromInput}
+                    disabled={atMaxFiles}
+                    hidden
+                />
 
-            {selectedFiles.length > 0 && (
-                <ul className="home-file-list">
+                <ul className="home-upload-grid" aria-label="Label images to validate">
                     {selectedFiles.map((file, index) => (
                         <FileListItem
                             key={`${file.name}-${file.lastModified}-${index}`}
@@ -75,69 +75,59 @@ const Home = () => {
                             onRemove={() => removeFile(index)}
                         />
                     ))}
+                    <li className="home-upload-grid-cell home-upload-grid-cell--drop">
+                        <button
+                            type="button"
+                            className="home-drop-zone"
+                            aria-label="Drag and drop label images here, or click to browse"
+                            disabled={atMaxFiles}
+                            data-drag-over={isDragOver || undefined}
+                            onClick={openFilePicker}
+                            onDragEnter={onDragEnter}
+                            onDragOver={onDragOver}
+                            onDragLeave={onDragLeave}
+                            onDrop={onDrop}
+                        >
+                            <img src="/camera.webp" alt="" />
+                            <p>
+                                {atMaxFiles
+                                    ? "Maximum files reached"
+                                    : "Drag and drop label images here, or click to browse"}
+                            </p>
+                        </button>
+                    </li>
                 </ul>
-            )}
 
-            <button
-                type="button"
-                className="home-drop-zone"
-                aria-label="Drag and drop label images here, or click to browse"
-                disabled={atMaxFiles}
-                data-drag-over={isDragOver || undefined}
-                onClick={openFilePicker}
-                onDragEnter={onDragEnter}
-                onDragOver={onDragOver}
-                onDragLeave={onDragLeave}
-                onDrop={onDrop}
-            >
-                {atMaxFiles
-                    ? "Maximum files reached"
-                    : "Drag and drop label images here, or click to browse"}
-            </button>
+                {addMorePrompt && <p>{addMorePrompt}</p>}
 
-            {addMorePrompt && <p>{addMorePrompt}</p>}
 
-            {atMaxFiles && (
-                <p>Maximum of {maxFiles} files reached. Remove a file to add a different one.</p>
-            )}
-
-            {selectedFiles.length === 0 ? (
-                <button type="button" onClick={openFilePicker} disabled={atMaxFiles}>
-                    Upload Image
+                <button type="button" onClick={submitFiles} disabled={!canSubmit}>
+                    {isSubmitting
+                        ? "Validating…"
+                        : `Validate ${selectedFiles.length > 0 ? `${selectedFiles.length} ` : ""}${
+                            selectedFiles.length === 1 ? "File" : "Files"
+                        }`}
                 </button>
-            ) : (
-                !atMaxFiles && (
-                    <button type="button" onClick={openFilePicker}>
-                        Add more files
-                    </button>
-                )
-            )}
-            <button type="button" onClick={submitFiles} disabled={!canSubmit}>
-                {isSubmitting
-                    ? "Validating…"
-                    : `Upload ${selectedFiles.length > 0 ? `${selectedFiles.length} ` : ""}${
-                          selectedFiles.length === 1 ? "File" : "Files"
-                      }`}
-            </button>
 
-            {isSubmitting && <p className="home-status">Analyzing label with the API…</p>}
+                {isSubmitting && <p className="home-status">Analyzing label…</p>}
 
-            {validationResults.length > 0 && (
-                <section className="home-validated" aria-live="polite">
-                    <h2>Validated labels</h2>
-                    <ul className="home-validated-list">
-                        {validationResults.map((result) => (
-                            <ValidatedLabelCard key={result.id} result={result} />
-                        ))}
-                    </ul>
-                </section>
-            )}
+                {validationResults.length > 0 && (
+                    <section className="home-validated" aria-live="polite">
+                        <h2>Validated labels</h2>
+                        <ul className="home-validated-list">
+                            {validationResults.map((result) => (
+                                <ValidatedLabelCard key={result.id} result={result} />
+                            ))}
+                        </ul>
+                    </section>
+                )}
 
-            {error && (
-                <p className="home-error" role="alert">
-                    {error}
-                </p>
-            )}
+                {error && (
+                    <p className="home-error" role="alert">
+                        {error}
+                    </p>
+                )}
+            </div>
         </div>
     );
 };

@@ -149,13 +149,7 @@ const LabelProvider = ({ children }: LabelProviderProps) => {
     }, [selectedFiles.length]);
 
     const addMorePrompt = useMemo(() => {
-        if (selectedFiles.length === 1) {
-            return `You've added 1 label image. Add up to ${MAX_LABEL_FILES - 1} more to validate a batch (maximum ${MAX_LABEL_FILES} files).`;
-        }
-        if (selectedFiles.length > 1 && !atMaxFiles) {
-            return `You've added ${selectedFiles.length} label images. You can add ${remainingSlots} more (maximum ${MAX_LABEL_FILES} files).`;
-        }
-        return null;
+        return `${selectedFiles.length} / ${MAX_LABEL_FILES} files uploaded`;
     }, [selectedFiles.length, atMaxFiles, remainingSlots]);
 
     const value = useMemo<LabelContextType>(
