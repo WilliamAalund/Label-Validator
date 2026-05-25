@@ -9,7 +9,7 @@
 
 
 :root {
-  --text: #6b6375;
+  --text: #5a5b5d;
   --text-h: #08060d;
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
@@ -21,8 +21,8 @@
   --btn-bg: #f0f0f0;
   --btn-bg-hover: #e2e2e2;
   --btn-bg-active: #d4d4d4;
-  --btn-border: #a7a7a7ce;
-  --btn-border-hover: #7a7a7a;
+  --btn-border: #c0c2c4;
+  --btn-border-hover: #5a5b5d;
 }
 
 body {
@@ -71,6 +71,8 @@ h2 {
 
 p {
   margin: 0;
+  text-align: left;
+  letter-spacing: 0.03em;
 }
 
 button {
@@ -181,8 +183,7 @@ code {
 }
 
 .home-content {
-  width: 100%;
-  max-width: 960px;
+  width: 85%;
   padding: 0.5rem;
   box-sizing: border-box;
 }
@@ -253,7 +254,7 @@ code {
 .home-file-remove:hover:not(:disabled) {
   background-color: #fef2f2;
   border-color: #f87171;
-  color: #b91c1c;
+  color: #c41230;
 }
 
 .home-file-remove:active:not(:disabled) {
@@ -391,7 +392,7 @@ code {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--text, #6b6375);
+  color: var(--text, #5a5b5d);
 }
 
 .home-expected-fields {
@@ -424,7 +425,7 @@ code {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--text, #6b6375);
+  color: var(--text, #5a5b5d);
 }
 
 .home-expected-field input[type="text"] {
@@ -608,7 +609,8 @@ code {
 
 .home-error {
   margin-top: 16px;
-  color: #b91c1c;
+  color: #c41230;
+  font-weight: 600;
 }
 
 .home-validated {
@@ -702,7 +704,7 @@ code {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--text, #6b6375);
+  color: var(--text, #5a5b5d);
 }
 
 .home-result-fields dd {

@@ -115,7 +115,7 @@ const Home = () => {
                         }`}
                 </button>
 
-                {isSubmitting && <p className="home-status">Analyzing label…</p>}
+                {isSubmitting && <p className="home-status">Analyzing label(s)…</p>}
 
                 {validationResults.length > 0 && (
                     <section className="home-validated" aria-live="polite">
