@@ -41,6 +41,8 @@ Run the command `docker compose up --build -w` in the root directory of the repo
 
 
 
+Should you want to host this application yourself, the simplest way to do this would be to utilize Render and link the `render.yaml` file to the platform. Setup from there should be fairly straightforward: you will need to provide the proper credentials for the services to work.
+
 # Approach
 
 ### Summary
