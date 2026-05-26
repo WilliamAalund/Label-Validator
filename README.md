@@ -35,7 +35,6 @@ Run the command `docker compose up --build -w` in the root directory of the repo
 
 
 > [!NOTE]
-
 > Optional: For local development outside Docker, install [pnpm](https://pnpm.io/installation) and run `pnpm install` from the repository root, then manually run each service.
 
 
